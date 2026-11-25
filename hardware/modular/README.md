@@ -44,7 +44,7 @@ AliExpress listing pages did not return usable HTML to this environment (they bl
 | ESP32-S3-DevKitC-1 N16R8 | Variant B controller. 16 MB quad SPI flash, 8 MB octal PSRAM. | GPIO, I2C, ADC1 | — | 3.3 V on the 3V3 pin | Espressif ESP32-S3-WROOM-1 datasheet v1.8; DevKitC-1 v1.1 user guide; Arduino-ESP32 `variants/esp32s3/pins_arduino.h` |
 | SGP41 module | VOC / NOx | I2C | 0x59 | 3.3 V (sensor abs. max 3.6 V) | Sensirion SGP41 datasheet. Listing [1005009523201465](https://pl.aliexpress.com/item/1005009523201465.html) was not fetched. |
 | SCD30 module | CO2, plus its own T/RH. Fit this **or** the SCD41. | I2C. `SEL` to GND. | 0x61 | 3.3 V (datasheet range 3.3–5.5 V; do not use 5 V here) | Sensirion SCD30 datasheet and interface description. Listing [1005012719322072](https://pl.aliexpress.com/item/1005012719322072.html). |
-| SCD41 module | CO2. Fit this **or** the SCD30. | I2C | 0x62 | 3.3 V (sensor 2.4–5.5 V, peak about 205 mA at 3.3 V) | Sensirion SCD4x datasheet. Listing [1005009897956849](https://pl.aliexpress.com/item/1005009897956849.html). |
+| SCD41 module | CO2. Fit this **or** the SCD30. Header, label side, left to right: GND, VCC, SCL, SDA. Board 13.4 × 21.6 mm. | I2C | 0x62 | 3.3 V (sensor 2.4–5.5 V, peak about 205 mA at 3.3 V) | Sensirion SCD4x datasheet and the module photo below. Listing [1005009897956849](https://pl.aliexpress.com/item/1005009897956849.html). |
 | SHT45 module | Temperature / humidity for compensation | I2C | 0x44 for SHT45-AD1B | 3.3 V (sensor abs. max 3.6 V) | Sensirion SHT4x datasheet. Listing [1005012546290193](https://pl.aliexpress.com/item/1005012546290193.html). |
 | SPS30 | Particulate matter. I2C mode. | I2C, `SEL` to GND before power-up | 0x69 | 5 V ±10% on VDD. Logic is 3.3 V (VIH min 2.31 V). Max 100 kHz. | Sensirion SPS30 datasheet v2.0 (June 2023). Listing [1005009874188645](https://pl.aliexpress.com/item/1005009874188645.html). |
 | BQ25185 + 5 V boost | USB-C / solar charger, 1S Li-ion, TPS61023 5 V boost for the SPS30 | Power. `EN` is active high. | — | Solar/DC operating range 3.6–18 V (abs. max 25 V, OVP about 18.5 V). Pack is 1S. Boost output 5 V. | TI BQ25185 datasheet Rev. B; Adafruit 6106 Eagle schematic and learn guide. Listing [1005008650602873](https://pl.aliexpress.com/item/1005008650602873.html) treated as a 6106 clone. |
@@ -79,6 +79,9 @@ The AliExpress links are the purchase links from the original module list. The p
 - Sensor: [Sensirion SCD41](https://sensirion.com/products/catalog/SCD41). Photo: [webp](https://sensirion.com/media/portfolio/product/image/0dbb13dc-abee-4dbf-a0d0-68cc881b5486.webp).
 - Breakout: [Adafruit 5190](https://www.adafruit.com/product/5190). Photo: [JPEG](https://cdn-shop.adafruit.com/970x728/5190-06.jpg).
 - Purchase: [AliExpress 1005009897956849](https://pl.aliexpress.com/item/1005009897956849.html).
+- This module, measured from the photo below: PCB 13.4 × 21.6 mm. Header, left to right on the label side: **GND, VCC, SCL, SDA**. R1 and R2 are marked 103 (10 kΩ) and are the likely I2C pull-ups. C1 is the local bypass. U1 is the SCD41. The schematic symbol lists those four pins in that order, top to bottom.
+
+![SCD41 module, header GND VCC SCL SDA](images/scd41.png)
 
 ![SCD41 on sensirion.com](https://sensirion.com/media/portfolio/product/image/0dbb13dc-abee-4dbf-a0d0-68cc881b5486.webp)
 
@@ -138,7 +141,7 @@ I2C pull-ups are **R4 and R5, 4.7 kΩ, to +3V3, and they are fitted.** Decision:
 
 - The SPS30 datasheet requires external pull-ups (their example is 10 kΩ) and the sensor has none.
 - The SCD30's only pull-ups are internal 45 kΩ to its own 3 V rail. That is too weak to be the only pull-up on a cabled bus, and it is not a 5 V pull-up. Powering the SCD30 from 3.3 V keeps the bus at 3.3 V. Do not power it from 5 V.
-- SGP41, SCD41 and SHT45 bare sensors also require external pull-ups. The breakout you receive may already have 4.7–10 kΩ. A 4.7 kΩ pair in parallel with one extra 10 kΩ pair is still about 3.2 kΩ, above the roughly 1 kΩ floor for a 3 mA sink at 3.3 V. If you measure the idle bus and the equivalent is under about 2 kΩ, remove either the schematic pair or the module pair.
+- SGP41, SCD41 and SHT45 bare sensors also require external pull-ups. The breakout you receive may already have 4.7–10 kΩ. A 4.7 kΩ pair in parallel with one extra 10 kΩ pair is still about 3.2 kΩ, above the roughly 1 kΩ floor for a 3 mA sink at 3.3 V. The SCD41 carrier in `images/scd41.png` has R1 and R2 marked 103 (10 kΩ), so those sit in parallel with R4 and R5. That is fine. If you measure the idle bus and the equivalent is under about 2 kΩ, remove either the schematic pair or the module pair.
 - Never pull SDA or SCL up to 5 V.
 
 Bus speed is 100 kHz. That is the SPS30 maximum and the SCD30 maximum. Sensirion recommends 50 kHz or less for the SCD30; this revision follows the 100 kHz spec and relies on clock stretching. Keep cables short. Sensirion suggests well under 10 cm for SPS30 on I2C.

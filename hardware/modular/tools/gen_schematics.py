@@ -538,7 +538,15 @@ def build_libraries(variant: str) -> dict[str, SymbolDef]:
     i2c4 = [("VCC", "power_in"), ("GND", "power_in"), ("SCL", "bidirectional"), ("SDA", "bidirectional")]
     add(box_symbol("Modular:SGP41", [], i2c4, half_w=15.24))
     add(box_symbol("Modular:SHT45", [], i2c4, half_w=15.24))
-    add(box_symbol("Modular:SCD41", [], i2c4, half_w=15.24))
+    # Header on the measured 13.4 x 21.6 mm carrier, left to right on the label
+    # side: GND, VCC, SCL, SDA. The symbol lists that order top to bottom.
+    scd41_pins = [
+        ("GND", "power_in"),
+        ("VCC", "power_in"),
+        ("SCL", "bidirectional"),
+        ("SDA", "bidirectional"),
+    ]
+    add(box_symbol("Modular:SCD41", [], scd41_pins, half_w=15.24))
     add(
         box_symbol(
             "Modular:SCD30",
