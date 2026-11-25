@@ -50,6 +50,11 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #include "AgSerialCommands.h"
 #include "WebServer.h"
 #include <HardwareSerial.h>
+#if defined(AG_MODULAR_I2C)
+#include <SensirionI2cScd30.h>
+#include <SensirionI2cScd4x.h>
+#include "ModularI2cSps.h"
+#endif
 #include <WebServer.h>
 #include <WiFi.h>
 #include <atomic>
@@ -101,7 +106,7 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 /**
  * I2C pins. The ESP32-C3 Open Air board uses GPIO7/GPIO6.
  * Modular envs in platformio.ini pass -D I2C_SDA_PIN / I2C_SCL_PIN
- * matching hardware/modular (rev A). Command-line -D wins over these defaults.
+ * matching hardware/modular (rev B, LOLIN32 Lite and ESP32-S3). Command-line -D wins over these defaults.
  */
 #ifndef I2C_SDA_PIN
 #define I2C_SDA_PIN 7
@@ -134,6 +139,30 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #define AG_UART0 Serial0
 #else
 #define AG_UART0 Serial2
+#endif
+
+#if defined(AG_MODULAR_I2C)
+#ifndef SPS30_ALWAYS_ON
+#define SPS30_ALWAYS_ON 1
+#endif
+#ifndef SPS30_STARTUP_MS
+// Sensirion SPS30 datasheet: stable measurement about 8 s after measurement starts.
+#define SPS30_STARTUP_MS 8000
+#endif
+#ifndef SCD30_INTERVAL_S
+#define SCD30_INTERVAL_S 2
+#endif
+
+enum class ModularCo2Kind { None, Scd30, Scd41 };
+static ModularCo2Kind modularCo2 = ModularCo2Kind::None;
+static SensirionI2cScd30 modularScd30;
+static SensirionI2cScd4x modularScd4x;
+static bool modularSpsFound = false;
+static bool modularSpsMeasuring = false;
+static bool modularSpsPowerIsOn = false;
+static uint32_t modularSpsMarkMs = 0;
+static bool modularCo2RhFallback = false;
+
 #endif
 
 /** Power pin */
@@ -223,6 +252,283 @@ static void restoreOperatorState();
 static BoardType getBoardType();
 static void requestBoardSelectionReboot();
 
+void dispSensorNotFound(String ss);
+
+#if defined(AG_MODULAR_I2C)
+static bool modularI2cProbe(uint8_t address) {
+  Wire.beginTransmission(address);
+  return Wire.endTransmission() == 0;
+}
+
+static void modularBus100kHz(void) {
+#ifdef I2C_CLOCK_HZ
+  Wire.setClock(I2C_CLOCK_HZ);
+#else
+  Wire.setClock(100000);
+#endif
+}
+
+static void modularPublishSps(bool ok, float mc1, float mc25, float mc10, float nc05, float nc1,
+                              float nc25, float nc10) {
+  const int channel = 1;
+  if (!ok) {
+    measurements.update(Measurements::PM01, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM25, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM10, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM01_SP, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM25_SP, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM10_SP, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM05_PC, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM01_PC, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM25_PC, utils::getInvalidPmValue(), channel);
+    measurements.update(Measurements::PM10_PC, utils::getInvalidPmValue(), channel);
+    return;
+  }
+  // Same Ae/SP mapping as the UART wrapper. Number counts are #/cm3 -> #/0.1 L.
+  measurements.update(Measurements::PM01, (int)mc1, channel);
+  measurements.update(Measurements::PM25, (int)mc25, channel);
+  measurements.update(Measurements::PM10, (int)mc10, channel);
+  measurements.update(Measurements::PM01_SP, (int)mc1, channel);
+  measurements.update(Measurements::PM25_SP, (int)mc25, channel);
+  measurements.update(Measurements::PM10_SP, (int)mc10, channel);
+  measurements.update(Measurements::PM05_PC, (int)(nc05 * 100.0f), channel);
+  measurements.update(Measurements::PM01_PC, (int)(nc1 * 100.0f), channel);
+  measurements.update(Measurements::PM25_PC, (int)(nc25 * 100.0f), channel);
+  measurements.update(Measurements::PM10_PC, (int)(nc10 * 100.0f), channel);
+}
+
+static void modularApplyCo2Rh(float tempC, float rh) {
+  if (configuration.hasSensorSHT || !modularCo2RhFallback) {
+    return;
+  }
+  measurements.update(Measurements::Temperature, tempC);
+  measurements.update(Measurements::Humidity, rh);
+  if (configuration.hasSensorSGP) {
+    ag->sgp41.setCompensationTemperatureHumidity(tempC, rh);
+  }
+}
+
+static void modularDetectCo2(void) {
+  modularBus100kHz();
+  const bool scd30Present = modularI2cProbe(SCD30_I2C_ADDR_61);
+  const bool scd41Present = modularI2cProbe(SCD41_I2C_ADDR_62);
+  Serial.printf("CO2 probe: SCD30 0x61 %s, SCD41 0x62 %s\n",
+                scd30Present ? "ACK" : "absent", scd41Present ? "ACK" : "absent");
+
+  configuration.hasSensorS8 = false;
+  modularCo2 = ModularCo2Kind::None;
+  if (!scd30Present && !scd41Present) {
+    Serial.println("CO2: no SCD30 or SCD41 on the I2C bus");
+    dispSensorNotFound("CO2");
+    return;
+  }
+  if (scd30Present && scd41Present) {
+    Serial.println("CO2: both 0x61 and 0x62 answered; using SCD41 and leaving SCD30 idle");
+  }
+
+  if (scd41Present) {
+    modularScd4x.begin(Wire, SCD41_I2C_ADDR_62);
+    // ASC on is the Sensirion default. It expects the sensor to see ~400 ppm
+    // background air from time to time. Outdoor air does that. Must be set
+    // while periodic measurement is stopped.
+    int16_t err = modularScd4x.setAutomaticSelfCalibrationEnabled(1);
+    if (err != 0) {
+      Serial.printf("SCD41: set ASC failed (%d); continuing\n", err);
+    }
+    err = modularScd4x.startPeriodicMeasurement();
+    if (err != 0) {
+      Serial.printf("SCD41: startPeriodicMeasurement failed (%d)\n", err);
+      dispSensorNotFound("SCD41");
+      return;
+    }
+    modularCo2 = ModularCo2Kind::Scd41;
+    Serial.println("CO2: SCD41 at 0x62, periodic measurement (5 s), ASC enabled");
+    return;
+  }
+
+  modularScd30.begin(Wire, SCD30_I2C_ADDR_61);
+  int16_t err = modularScd30.setMeasurementInterval(SCD30_INTERVAL_S);
+  if (err != 0) {
+    Serial.printf("SCD30: setMeasurementInterval(%u) failed (%d)\n", SCD30_INTERVAL_S, err);
+  }
+  // 1 enables ASC. Same fresh-air assumption as the SCD41. Ambient pressure 0
+  // leaves pressure compensation off.
+  err = modularScd30.activateAutoCalibration(1);
+  if (err != 0) {
+    Serial.printf("SCD30: activate ASC failed (%d); continuing\n", err);
+  }
+  err = modularScd30.startPeriodicMeasurement(0);
+  if (err != 0) {
+    Serial.printf("SCD30: startPeriodicMeasurement failed (%d)\n", err);
+    dispSensorNotFound("SCD30");
+    return;
+  }
+  modularCo2 = ModularCo2Kind::Scd30;
+  Serial.printf("CO2: SCD30 at 0x61, continuous interval %u s, ASC enabled\n", SCD30_INTERVAL_S);
+}
+
+static void modularCo2Update(void) {
+  if (modularCo2 == ModularCo2Kind::None) {
+    return;
+  }
+  modularBus100kHz();
+  if (modularCo2 == ModularCo2Kind::Scd41) {
+    bool ready = false;
+    if (modularScd4x.getDataReadyStatus(ready) != 0 || !ready) {
+      return;
+    }
+    uint16_t co2 = 0;
+    float temp = 0;
+    float rh = 0;
+    if (modularScd4x.readMeasurement(co2, temp, rh) != 0) {
+      measurements.update(Measurements::CO2, utils::getInvalidCO2());
+      Serial.println("SCD41 read failed");
+      return;
+    }
+    measurements.update(Measurements::CO2, (int)co2);
+    modularApplyCo2Rh(temp, rh);
+    return;
+  }
+  uint16_t ready = 0;
+  if (modularScd30.getDataReady(ready) != 0 || ready == 0) {
+    return;
+  }
+  float co2 = 0;
+  float temp = 0;
+  float rh = 0;
+  if (modularScd30.readMeasurementData(co2, temp, rh) != 0) {
+    measurements.update(Measurements::CO2, utils::getInvalidCO2());
+    Serial.println("SCD30 read failed");
+    return;
+  }
+  measurements.update(Measurements::CO2, (int)(co2 + 0.5f));
+  modularApplyCo2Rh(temp, rh);
+}
+
+static void modularSpsPower(bool on) {
+#ifdef SPS30_5V_EN_PIN
+  digitalWrite(SPS30_5V_EN_PIN, on ? HIGH : LOW);
+#endif
+  modularSpsPowerIsOn = on;
+}
+
+static bool modularStartSpsMeasurement(void) {
+  modularBus100kHz();
+  int16_t err = modularI2cSpsWake();
+  if (err != 0) {
+    Serial.printf("SPS30 wakeUpSequence: %d\n", err);
+  }
+  err = modularI2cSpsStart();
+  if (err != 0) {
+    Serial.printf("SPS30 startMeasurement failed (%d)\n", err);
+    modularSpsMeasuring = false;
+    return false;
+  }
+  modularSpsMeasuring = true;
+  modularSpsMarkMs = millis();
+  Serial.printf("SPS30 I2C measurement started; waiting %u ms for a stable sample\n",
+                (unsigned)SPS30_STARTUP_MS);
+  return true;
+}
+
+static void modularInitSps(void) {
+  configuration.hasSensorPMS1 = false;
+  configuration.hasSensorPMS2 = false;
+  configuration.hasSensorSPS30_1 = false;
+  configuration.hasSensorSPS30_2 = false;
+  modularBus100kHz();
+  if (!modularI2cProbe(0x69)) {
+    Serial.println("SPS30: no ACK at 0x69");
+    dispSensorNotFound("SPS30");
+    return;
+  }
+  modularI2cSpsBegin();
+  modularSpsFound = true;
+  configuration.hasSensorSPS30_1 = true;
+  modularSpsPower(true);
+  Serial.printf("SPS30 at 0x69. Power policy %s (startup %u ms).\n",
+                SPS30_ALWAYS_ON ? "always-on" : "off between readings",
+                (unsigned)SPS30_STARTUP_MS);
+  modularStartSpsMeasurement();
+}
+
+static void modularUpdateSps(void) {
+  if (!modularSpsFound) {
+    return;
+  }
+  if (!modularSpsMeasuring) {
+    modularSpsPower(true);
+    modularStartSpsMeasurement();
+    return;
+  }
+  if ((uint32_t)(millis() - modularSpsMarkMs) < (uint32_t)SPS30_STARTUP_MS) {
+    return;
+  }
+  modularBus100kHz();
+  uint16_t ready = 0;
+  if (modularI2cSpsReady(ready) != 0 || ready == 0) {
+    return;
+  }
+  float mc1 = 0, mc25 = 0, mc4 = 0, mc10 = 0;
+  float nc05 = 0, nc1 = 0, nc25 = 0, nc4 = 0, nc10 = 0, typical = 0;
+  const int16_t err = modularI2cSpsRead(mc1, mc25, mc4, mc10, nc05, nc1, nc25, nc4, nc10, typical);
+  if (err != 0) {
+    Serial.printf("SPS30 read failed (%d)\n", err);
+    modularPublishSps(false, 0, 0, 0, 0, 0, 0, 0);
+    return;
+  }
+  modularPublishSps(true, mc1, mc25, mc10, nc05, nc1, nc25, nc10);
+  // First sample is in. Later reads should not wait another full startup.
+  modularSpsMarkMs = millis() - (uint32_t)SPS30_STARTUP_MS;
+#if !SPS30_ALWAYS_ON
+  modularI2cSpsStop();
+  modularSpsMeasuring = false;
+  modularSpsPower(false);
+  Serial.println("SPS30 powered off until the next reading");
+#endif
+}
+
+static void modularBoardInit(void) {
+  // Open Air button is GPIO9, status LED GPIO10, watchdog GPIO2. Those are
+  // the C3 board, not this harness (GPIO9 is SCL on the S3 variant).
+  Serial.println("Modular I2C harness: skipping Open Air button, LED, and watchdog pins");
+  configuration.hasSensorS8 = false;
+  configuration.hasSensorSHT = false;
+  configuration.hasSensorSGP = false;
+
+  if (sgp41Init() == false) {
+    Serial.println("SGP41 not found");
+    dispSensorNotFound("SGP41");
+  } else {
+    Serial.println("SGP41 on the shared I2C bus");
+  }
+  modularBus100kHz();
+
+  if (ag->sht.begin(Wire) == false) {
+    Serial.println("SHT not found; CO2 sensor T/RH will be used if a CO2 sensor is present");
+    configuration.hasSensorSHT = false;
+    modularCo2RhFallback = true;
+    dispSensorNotFound("SHT");
+  } else {
+    configuration.hasSensorSHT = true;
+    modularCo2RhFallback = false;
+    Serial.println("SHT on the shared I2C bus");
+  }
+  modularBus100kHz();
+
+  modularDetectCo2();
+  modularInitSps();
+  modularBus100kHz();
+
+  // Single PM channel payload. O-1PST/O-1PS keep getClientPayloadType() on the
+  // one-channel Open Air payload even though CO2 is SCD3x/SCD4x rather than S8.
+  fwMode = configuration.hasSensorSGP ? FW_MODE_O_1PST : FW_MODE_O_1PS;
+  Serial.printf("Firmware Mode: %s\r\n", AgFirmwareModeName(fwMode));
+  Serial.println("Firmware Version: " + ag->getVersion());
+}
+#endif
+
+
 AgSchedule dispLedSchedule(DISP_UPDATE_INTERVAL, updateDisplayAndLedBar);
 AgSchedule configSchedule(WIFI_SERVER_CONFIG_SYNC_INTERVAL, configurationUpdateSchedule);
 AgSchedule transmissionSchedule(WIFI_TRANSMISSION_INTERVAL, sendDataToServer);
@@ -246,8 +552,8 @@ void setup() {
 
 #ifdef SPS30_5V_EN_PIN
   // 5 V boost enable is active high (Adafruit 6106 / TPS61023). High keeps the
-  // SPS30 powered. The rail is I2C-wired on the modular sheet; this firmware
-  // still probes SPS30 on UART.
+  // SPS30 powered. Modular builds read it over I2C; SPS30_ALWAYS_ON=0 powers
+  // the boost down between readings.
   pinMode(SPS30_5V_EN_PIN, OUTPUT);
   digitalWrite(SPS30_5V_EN_PIN, HIGH);
 #endif
@@ -460,9 +766,15 @@ void loop() {
     measurementSchedule.run();
   }
 
+#if defined(AG_MODULAR_I2C)
+  if (modularCo2 != ModularCo2Kind::None) {
+    co2Schedule.run();
+  }
+#else
   if (configuration.hasSensorS8) {
     co2Schedule.run();
   }
+#endif
   if (configuration.hasSensorPMS1 || configuration.hasSensorPMS2 ||
       configuration.hasSensorSPS30_1 || configuration.hasSensorSPS30_2) {
     pmsSchedule.run();
@@ -470,11 +782,17 @@ void loop() {
   if (fanController != nullptr && fanController->isReady()) {
     fanControllerSchedule.run();
   }
+#if defined(AG_MODULAR_I2C)
+  if (configuration.hasSensorSHT) {
+    tempHumSchedule.run();
+  }
+#else
   if (ag->isOne()) {
     if (configuration.hasSensorSHT) {
       tempHumSchedule.run();
     }
   }
+#endif
   if (configuration.hasSensorSGP) {
     tvocSchedule.run();
   }
@@ -582,6 +900,10 @@ static void serialCommandHandle(const AgSerialCommands::Request &request, char *
 }
 
 static void co2Update(void) {
+#if defined(AG_MODULAR_I2C)
+  modularCo2Update();
+  return;
+#endif
   if (!configuration.hasSensorS8) {
     // Device don't have S8 sensor
     return;
@@ -796,6 +1118,10 @@ static void factoryConfigReset(void) {
 }
 
 static void wdgFeedUpdate(void) {
+#if defined(AG_MODULAR_I2C)
+  // Open Air's external watchdog is GPIO2. It is not on this harness.
+  return;
+#endif
   ag->watchdog.reset();
   Serial.println("External watchdog feed!");
 }
@@ -1251,11 +1577,15 @@ static void openAirInit(void) {
 }
 
 static void boardInit(void) {
+#if defined(AG_MODULAR_I2C)
+  modularBoardInit();
+#else
   if (ag->isOne()) {
     oneIndoorInit();
   } else {
     openAirInit();
   }
+#endif
 
   /** Set S8 CO2 abc days period */
   if (configuration.hasSensorS8) {
@@ -1760,6 +2090,10 @@ static void updateSPS30(SPS30 &sensor, int channel) {
 }
 
 static void updatePm(void) {
+#if defined(AG_MODULAR_I2C)
+  modularUpdateSps();
+  return;
+#endif
   if (ag->isOne()) {
     if (configuration.hasSensorSPS30_1) {
       updateSPS30(ag->sps30_1, 1);
