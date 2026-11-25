@@ -106,7 +106,7 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 /**
  * I2C pins. The ESP32-C3 Open Air board uses GPIO7/GPIO6.
  * Modular envs in platformio.ini pass -D I2C_SDA_PIN / I2C_SCL_PIN
- * matching hardware/modular (rev B, LOLIN32 Lite and ESP32-S3). Command-line -D wins over these defaults.
+ * matching hardware/modular (LOLIN32 V1.0.0 and ESP32-S3). Command-line -D wins over these defaults.
  */
 #ifndef I2C_SDA_PIN
 #define I2C_SDA_PIN 7

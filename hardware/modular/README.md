@@ -8,7 +8,7 @@ Revision **B**, 2026-11-25.
 
 | Variant | Project | MCU |
 | --- | --- | --- |
-| A | [`variant-a-esp32-d1mini/modular-a.kicad_pro`](variant-a-esp32-d1mini/modular-a.kicad_pro) | WEMOS LOLIN32 Lite, ESP32-WROOM-32, micro-USB, JST LiPo. Photo 57.9 × 25.6 mm |
+| A | [`variant-a-esp32-d1mini/modular-a.kicad_pro`](variant-a-esp32-d1mini/modular-a.kicad_pro) | WEMOS LOLIN32 V1.0.0, ESP32-WROOM-32, micro-USB, PH-2 battery. 58 × 25.4 mm |
 | B | [`variant-b-esp32s3-n16r8/modular-b.kicad_pro`](variant-b-esp32s3-n16r8/modular-b.kicad_pro) | ESP32-S3-WROOM-1 N16R8 on an AI-S3 / DevKitC-1 clone (16 MB quad flash, 8 MB octal PSRAM) |
 
 Printable schematic, both sheets, landscape A4: [`schematic-modular-A4.pdf`](schematic-modular-A4.pdf).
@@ -17,7 +17,7 @@ Symbols are embedded in each `.kicad_sch`. There is no PCB. `hardware/modular/to
 
 ## What the firmware in this change does
 
-`pio run -e modular-lolin32-lite` (same flags as `modular-esp32-d1mini`) and `pio run -e modular-esp32s3-n16r8` select the pins below. The existing `esp32-c3` environment is unchanged.
+`pio run -e modular-lolin32` (same flags as `modular-esp32-d1mini` and `modular-lolin32-lite`) and `pio run -e modular-esp32s3-n16r8` select the pins below. The existing `esp32-c3` environment is unchanged.
 
 Selecting an environment does three things in `examples/OneOpenAir/OneOpenAir.ino`:
 
@@ -29,7 +29,7 @@ On these two environments the sketch probes I2C for a CO2 sensor and reads the S
 
 | Board | `Serial2` default pins (Arduino-ESP32 2.0.17) | Leave unconnected |
 | --- | --- | --- |
-| Variant A, LOLIN32 Lite | RX GPIO16, TX GPIO17 | GPIO16, GPIO17 |
+| Variant A, LOLIN32 V1.0.0 | RX GPIO16, TX GPIO17 | GPIO16, GPIO17 |
 | Variant B, ESP32-S3 | RX GPIO19, TX GPIO20 | GPIO19, GPIO20 (these are also the native USB pins) |
 
 The sketch still drives GPIO3, GPIO4 and GPIO5 while it looks for a cellular card. Do not wire those pins on either variant.
@@ -40,7 +40,7 @@ AliExpress listing pages did not return usable HTML to this environment (they bl
 
 | Name | Function | Interface | I2C address | Voltage | Source used |
 | --- | --- | --- | --- | --- | --- |
-| WEMOS LOLIN32 Lite | Variant A controller. ESP32-WROOM-32, 57.9 × 25.6 mm on the photo. | GPIO, I2C, ADC1 | — | 3.3 V on the 3V pin | Arduino-ESP32 2.0.17 `variants/lolin32-lite/pins_arduino.h` and the photo `images/wemos-lolin32-lite.png`. |
+| WEMOS LOLIN32 V1.0.0 | Variant A controller. ESP32-WROOM-32. 58 × 25.4 mm (earlier photo print 57.9 × 25.6 mm). | GPIO, I2C, ADC1 | — | 3.3 V on the 3V pin | Archived Wemos LOLIN32 page, Arduino `variants/lolin32/pins_arduino.h`, and `images/wemos-lolin32.png`. |
 | ESP32-S3 N16R8 (AI-S3) | Variant B controller. 16 MB quad SPI flash, 8 MB octal PSRAM. Board 57.15 × 27.94 mm. | GPIO, I2C, ADC1 | — | 3.3 V on the 3V3 pin | [YD-ESP32-S3 size](https://www.espboards.dev/esp32/yd-esp32-s3/) and the photo `images/esp32s3-n16r8.png`. |
 | SGP41 module | VOC / NOx. Header VIN, 3.3V, GND, SCL, SDA. Adafruit 6455 outline 25.4 × 17.78 mm. | I2C | 0x59 | 3.3 V into VIN (breakout accepts 3–5 V) | Photo `images/sgp41.png`, Sensirion SGP41 datasheet, and Adafruit 6455 Eagle. Listing [1005009523201465](https://pl.aliexpress.com/item/1005009523201465.html). |
 | SCD30 module | CO2, plus its own T/RH. Fit this **or** the SCD41. 35 × 23 × 7 mm. Header VDD, GND, TX/SCL, RX/SDA, RDY, PWM, SEL. | I2C. `SEL` open or to GND. | 0x61 | 3.3 V (datasheet range 3.3–5.5 V; do not use 5 V here) | Photo `images/scd30.png` and Sensirion SCD30 datasheet. Listing [1005012719322072](https://pl.aliexpress.com/item/1005012719322072.html). |
@@ -142,13 +142,14 @@ No photo. A typical part is an epoxy bead in the MF52 family. Nanjing Shiheng's 
 
 ![TPS63020 26 by 18 mm module](images/tps63020.png)
 
-### WEMOS LOLIN32 Lite
+### WEMOS LOLIN32 V1.0.0
 
-This is the variant A board. Wemos retired the Lite; the pin map used here is the Arduino `lolin32-lite` variant plus the [DONE.LAND pinout](https://done.land/components/microcontroller/families/esp/esp32/developmentboards/esp32s/lolin32lite/). The photo below is the board in hand, 57.9 × 25.6 mm.
+This is the variant A board. Silkscreen reads LOLIN32 V1.0.0. ESP32-WROOM-32, micro-USB, PH-2 battery socket, onboard charger, CHG LED, and a RESET button. The archived [Wemos LOLIN32 page](https://web.archive.org/web/20181114100348/wiki.wemos.cc/products:lolin32:lolin32) lists **58 × 25.4 mm** and a 500 mA charge current. An earlier marked photo of this board printed 57.9 × 25.6 mm, which is the same outline within about a millimetre. The photo below has no scale.
 
+- Pinout drawing: [espboards.dev LOLIN32](https://www.espboards.dev/esp32/lolin32/).
 - Purchase class: [AliExpress 1005008273255710](https://pl.aliexpress.com/item/1005008273255710.html).
 
-![WEMOS LOLIN32 Lite, 57.9 by 25.6 mm](images/wemos-lolin32-lite.png)
+![WEMOS LOLIN32 V1.0.0](images/wemos-lolin32.png)
 
 ### ESP32-S3-DevKitC-1 N16R8
 
@@ -180,42 +181,41 @@ Bus speed is 100 kHz. That is the SPS30 maximum and the SCD30 maximum. Sensirion
 - Do not power the board from USB and from the 3V3 pin at the same time. The onboard regulator and the TPS63020 will fight.
 - Do not connect `+5V_SPS` to the ESP32 `5V` / VBUS pin. That 5 V rail is only for the SPS30.
 
-### Variant A — `modular-lolin32-lite` (and `modular-esp32-d1mini`)
+### Variant A — `modular-lolin32` (also `modular-esp32-d1mini` and `modular-lolin32-lite`)
 
-The board in the photo is sold as a WeMos D1 ESP32 and is a **WEMOS LOLIN32 Lite**: ESP32-WROOM-32, micro-USB, onboard LiPo charger, 2-pin JST PH battery socket. The print on [`images/wemos-lolin32-lite.png`](images/wemos-lolin32-lite.png) is **57.9 × 25.6 mm**. That is longer than the retired bare-chip Lite (often quoted near 49–50 × 25 mm) because this one carries a WROOM module. PlatformIO board is `lolin32_lite`. `modular-esp32-d1mini` is the same environment under the old name.
+The board in [`images/wemos-lolin32.png`](images/wemos-lolin32.png) is a **WEMOS LOLIN32 V1.0.0**: silkscreen `LOLIN32 V1.0.0`, ESP32-WROOM-32, micro-USB, PH-2 battery socket, onboard charger, CHG LED, and RESET. The archived [Wemos LOLIN32 page](https://web.archive.org/web/20181114100348/wiki.wemos.cc/products:lolin32:lolin32) gives **58 mm × 25.4 mm** and a 500 mA maximum charge current. An earlier marked photo printed 57.9 × 25.6 mm. PlatformIO board is `lolin32`. The two older environment names build the same flags.
 
-Reference pinout: Arduino-ESP32 2.0.17 [`variants/lolin32-lite/pins_arduino.h`](https://github.com/espressif/arduino-esp32/blob/2.0.17/variants/lolin32-lite/pins_arduino.h) sets `SDA = 19`, `SCL = 23`, `LED_BUILTIN = 22`, `A0 = 36`. A written pin list that matches this header is [DONE.LAND — Lolin32 Lite](https://done.land/components/microcontroller/families/esp/esp32/developmentboards/esp32s/lolin32lite/). GPIO21 is not on that header, so the old D1 Mini map (SDA 21, SCL 22) does not fit.
+Arduino-ESP32 2.0.17 [`variants/lolin32/pins_arduino.h`](https://github.com/espressif/arduino-esp32/blob/2.0.17/variants/lolin32/pins_arduino.h) sets `SDA = 21`, `SCL = 22`, `LED_BUILTIN = 5`, `A0 = 36`. The [LOLIN32 pinout](https://www.espboards.dev/esp32/lolin32/) shows GPIO21 and GPIO22 on the header, and the user LED on GPIO5, active low (on when the pin is low). GPIO5 is also a strapping pin and must be high at boot, which is the LED-off state. It is not used for I2C or the boost enable.
 
-Checked against that header:
-
-| Signal | On the Lite header? | Choice |
+| Signal | On the V1.0.0 header? | Choice |
 | --- | --- | --- |
-| GPIO21 | No | Not used. |
-| GPIO22 | Yes, and it is the blue LED (on when the pin is low) | Not used for I2C. |
-| GPIO19 | Yes | **SDA** |
-| GPIO23 | Yes | **SCL** |
-| GPIO26 | Yes (in the 25–27 group) | **SPS30 5 V enable**, active high |
+| GPIO21 | Yes | **SDA** |
+| GPIO22 | Yes. Not the LED. | **SCL** |
+| GPIO5 | Yes, blue LED, active low, strap pin | Left alone. |
+| GPIO26 | Yes | **SPS30 5 V enable**, active high |
 | GPIO36 / VP | Yes, input only | **VBAT ADC**, ADC1 channel 0 |
 
-Strapping pins GPIO0, GPIO2, GPIO12 and GPIO15 stay open. Input-only GPIO34, GPIO35 and GPIO39 stay open. GPIO36 is the one input-only pin we use, and only as an ADC.
+Strapping pins GPIO0, GPIO2, GPIO12 and GPIO15 stay open. Input-only GPIO34, GPIO35 and GPIO39 stay open. GPIO36 is the one input-only pin we use, and only as an ADC. GPIO26 is a digital output here. It is also ADC2, which cannot be read while Wi-Fi is on, but this net is not an ADC input.
 
 | Signal | GPIO | Silkscreen | Notes |
 | --- | --- | --- | --- |
-| I2C SDA | 19 | 19 | Arduino `SDA` for `lolin32-lite` |
-| I2C SCL | 23 | 23 | Arduino `SCL`. GPIO22 is the LED, so it is not the clock. |
+| I2C SDA | 21 | 21 | Arduino `SDA` for `lolin32` |
+| I2C SCL | 22 | 22 | Arduino `SCL` |
 | SPS30 5 V enable | 26 | 26 | Active high. Series 1 kΩ (R3) to the boost `EN`. |
 | VBAT ADC | 36 | VP | ADC1 channel 0, input only. 11 dB attenuation. |
-| ESP32 3V3 | — | 3V | From JP1 / TPS63020. Not from USB at the same time. |
+| ESP32 3V3 | — | 3V3 | From JP1 / TPS63020. Not from USB at the same time. |
+| ESP32 5V | — | 5V | USB VBUS. Leave it open. Do not tie it to `+5V_SPS`. |
+| User LED | 5 | 5 | Active low. The cellular probe also drives GPIO5, so this LED can blink during that probe. |
 | GND | — | GND | Common ground. |
 
-The Lite has **no 5 V pin** and **no battery divider**. The 100 kΩ / 100 kΩ divider on the sheet is required. `A0` in this variant is GPIO36 with no onboard divider.
+The board has **no battery divider**. The 100 kΩ / 100 kΩ divider on the sheet is required. `A0` in this variant is GPIO36 with no onboard divider.
 
-**Onboard charger.** The Lite charges a 1S pack from micro-USB through its own charger (the reference board uses a TP4054-class part, about 500 mA) and the JST socket. That charger has no solar input and no 5 V boost. Decision for this monitor:
+**Onboard charger.** The archived Wemos page specifies a lithium battery interface at **500 mA** maximum and a PH-2 2.0 mm connector. A [LOLIN32 hardware review](https://nerdytechy.com/wemos-lolin32-review/) identifies the charger as an LTC4054 at 500 mA; the TP4054 is the same charger function. The CHG LED is that charger's indicator, not the GPIO5 user LED. The charger has no solar input and no 5 V boost. Decision for this monitor:
 
-- **Keep the BQ25185 module** when the box has a solar or DC input. It is also the only 5 V boost for the SPS30. Do **not** connect the same cell to the Lite JST and to the BQ25185. Two chargers on one pack is not safe. Leave the Lite JST empty and do not plug the Lite's micro-USB in while JP1 feeds 3.3 V into the 3V pin.
-- **The Lite charger can replace the BQ25185 only if there is no solar panel.** Charge from the Lite's micro-USB and JST, and still add a separate 5 V boost from the pack for the SPS30. The sheet does not draw that second boost; the drawn 5 V source is the BQ module. The external divider to GPIO36 stays either way.
+- **Keep the BQ25185 module** when the box has a solar or DC input. It is also the only 5 V boost for the SPS30. Do **not** connect the same cell to the LOLIN32 battery socket and to the BQ25185. Two chargers on one pack is not safe. Leave the LOLIN32 battery socket empty and do not plug the board's micro-USB in while JP1 feeds 3.3 V into the 3V3 pin.
+- **The LOLIN32 charger can replace the BQ25185 only if there is no solar panel.** Charge from the board's micro-USB and PH-2 socket, and still add a separate 5 V boost from the pack for the SPS30. The sheet does not draw that second boost; the drawn 5 V source is the BQ module. The external divider to GPIO36 stays either way.
 
-Build flags: `-D I2C_SDA_PIN=19 -D I2C_SCL_PIN=23 -D SPS30_5V_EN_PIN=26 -D VBAT_ADC_PIN=36 -D I2C_CLOCK_HZ=100000 -D WIRE_TIMEOUT_MS=200 -D VBAT_DIVIDER_NUM=2 -D VBAT_DIVIDER_DEN=1`.
+Build flags: `-D I2C_SDA_PIN=21 -D I2C_SCL_PIN=22 -D SPS30_5V_EN_PIN=26 -D VBAT_ADC_PIN=36 -D I2C_CLOCK_HZ=100000 -D WIRE_TIMEOUT_MS=200 -D VBAT_DIVIDER_NUM=2 -D VBAT_DIVIDER_DEN=1`.
 
 ### Variant B — `modular-esp32s3-n16r8`
 
@@ -301,21 +301,23 @@ kicad-cli sch erc --severity-error --severity-warning hardware/modular/variant-b
 From the repository root, with PlatformIO and `espressif32@6.13.0` (Arduino-ESP32 2.0.17, same pin as the ESP32-C3 environment):
 
 ```
-pio run -e modular-lolin32-lite
+pio run -e modular-lolin32
 pio run -e modular-esp32-d1mini
+pio run -e modular-lolin32-lite
 pio run -e modular-esp32s3-n16r8
 pio run -e esp32-c3
 ```
 
-A build on 2026-11-25, after `git submodule update --init --recursive`. Variant A is the LOLIN32 Lite (`lolin32_lite`). `modular-esp32-d1mini` is the same build under the previous environment name.
+A build on 2026-11-25. Variant A is the LOLIN32 V1.0.0 (`lolin32`). `modular-esp32-d1mini` and `modular-lolin32-lite` are the same image under the older names.
 
 | Environment | Result | RAM | Flash |
 | --- | --- | --- | --- |
+| `modular-lolin32` | success | 78540 / 327680 bytes (24.0%) | 1793425 / 1966080 bytes (91.2%) |
 | `modular-lolin32-lite` | success | 78540 / 327680 bytes (24.0%) | 1793489 / 1966080 bytes (91.2%) |
 | `modular-esp32-d1mini` | success | 78540 / 327680 bytes (24.0%) | 1793489 / 1966080 bytes (91.2%) |
 | `modular-esp32s3-n16r8` | success | 73960 / 327680 bytes (22.6% of internal SRAM; the 8 MB PSRAM is not in this number) | 1684061 / 1966080 bytes (85.7%) |
 | `esp32-c3` (unchanged environment, rebuilt as a check) | success | 68844 / 327680 bytes (21.0%) | 1781418 / 1966080 bytes (90.6%) |
 
-Those modular numbers are with `AG_MODULAR_I2C` (SCD30/SCD41 auto-detect and SPS30 over I2C). The C3 image is the same size as before that flag.
+Those modular numbers are with `AG_MODULAR_I2C` (SCD30/SCD41 auto-detect and SPS30 over I2C). The three variant A rows use the same flags on board `lolin32`. The C3 image is the same size as before this pin change.
 
 The S3 image was linked against the `qio_opi` SDK libraries and `esptool` was invoked with `--flash_size 16MB`. The app partition is still the 4 MB Open Air slot (`0x1E0000` bytes), which is why the flash percentage is against 1.9 MB rather than 16 MB.

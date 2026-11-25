@@ -534,11 +534,11 @@ def build_libraries(variant: str) -> dict[str, SymbolDef]:
         )
     )
     if variant == "A":
-        # LOLIN32 Lite header. GPIO21 is not broken out. GPIO22 is the
-        # active-low blue LED, so SCL is GPIO23 (the variant's Wire default).
+        # Full LOLIN32 V1.0.0. SDA/SCL are the Arduino defaults. GPIO5 is the
+        # active-low LED, so it is not used. EN and the battery ADC stay.
         mcu_right = [
-            ("IO19", "bidirectional"),
-            ("IO23", "bidirectional"),
+            ("IO21", "bidirectional"),
+            ("IO22", "bidirectional"),
             ("IO26", "output"),
             ("IO36/VP", "passive"),
         ]
@@ -639,21 +639,21 @@ def wire_pins(sch: Sch, pins: dict, mapping: list[tuple]) -> None:
 def build(variant: str) -> Sch:
     if variant == "A":
         project = "modular-a"
-        title = "Modular outdoor monitor — variant A (WEMOS LOLIN32 Lite)"
+        title = "Modular outdoor monitor — variant A (WEMOS LOLIN32 V1.0.0)"
         comments = [
             "Not the AirGradient V1.3 PCB. Off-the-shelf modules only.",
-            "LOLIN32 Lite: SDA GPIO19, SCL GPIO23, SPS30 EN GPIO26, VBAT ADC GPIO36/VP.",
-            "GPIO21 is not on the header. GPIO22 is the blue LED. Do not use the onboard charger with the BQ25185.",
+            "LOLIN32 V1.0.0: SDA GPIO21, SCL GPIO22, SPS30 EN GPIO26, VBAT ADC GPIO36/VP.",
+            "GPIO5 is the blue LED (active low). Do not use the onboard charger with the BQ25185.",
             "I2C 100 kHz, 3.3 V logic. Fit SCD30 (0x61) or SCD41 (0x62), not both.",
             "A4 landscape 297 x 210 mm. Rev B, 2026-11-25.",
         ]
         mcu_id = "Modular:MCU_A"
-        mcu_value = "WEMOS LOLIN32 Lite"
+        mcu_value = "WEMOS LOLIN32 V1.0.0"
         gpio_line = (
-            "Variant A LOLIN32 Lite: SDA GPIO19, SCL GPIO23, SPS30 EN GPIO26 (active high), VBAT ADC GPIO36/VP (ADC1)."
+            "Variant A LOLIN32 V1.0.0: SDA GPIO21, SCL GPIO22, SPS30 EN GPIO26 (active high), VBAT ADC GPIO36/VP (ADC1)."
         )
         avoid_line = (
-            "Also leave open: GPIO0/2/12/15 (strap), GPIO22 (LED, active low), GPIO1/TX, GPIO3/RX, GPIO6-11 (flash), GPIO4 and GPIO5."
+            "Also leave open: GPIO0/2/12/15 (strap), GPIO5 (LED, active low), GPIO1/TX, GPIO3/RX, GPIO6-11 (flash), GPIO4."
         )
     else:
         project = "modular-b"
@@ -809,7 +809,7 @@ def build(variant: str) -> Sch:
     # --- MCU and sensors ---
     mcu = sch.place(mcu_id, "U3", mcu_value, 175.26, 71.12)
     if variant == "A":
-        sig = [("IO19", "SDA"), ("IO23", "SCL"), ("IO26", "SPS_EN"), ("IO36/VP", "VBAT_SENSE")]
+        sig = [("IO21", "SDA"), ("IO22", "SCL"), ("IO26", "SPS_EN"), ("IO36/VP", "VBAT_SENSE")]
     else:
         sig = [("IO8", "SDA"), ("IO9", "SCL"), ("IO7", "SPS_EN"), ("IO6", "VBAT_SENSE")]
     wire_pins(
