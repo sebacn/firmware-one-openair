@@ -696,7 +696,7 @@ def build(variant: str) -> Sch:
             ("GND", "pwr", "GND", "right"),
         ],
     )
-    pack = sch.place("Modular:PACK", "J2", "1S 18650 2-3P protected", 33.02, 86.36)
+    pack = sch.place("Modular:PACK", "J2", "1S3P 18650", 33.02, 86.36)
     wire_pins(
         sch,
         pack,
