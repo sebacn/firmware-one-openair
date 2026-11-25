@@ -52,7 +52,83 @@ AliExpress listing pages did not return usable HTML to this environment (they bl
 | 1S pack | 2 or 3 18650 cells in parallel, one 1S protection circuit | Battery | — | 3.0–4.2 V | — |
 | 10 kΩ NTC, β(25/85) = 3435 K | Cold/hot charge cutoff, body on the cells | Analog, charger `TS` to GND | — | — | BQ25185 TS bias is specified for this NTC |
 
-Product photos were not stored. The AliExpress pages blocked the fetch, and the Sensirion, Adafruit and Espressif product photos found from here are not clearly licensed for redistribution. No `images/` directory was added.
+## Photos and product pages
+
+Every product-page URL and every photo URL below returned HTTP 200 when checked on 2026-11-25. Images are hotlinked. None of these files are committed. Sensirion, Espressif, Wemos/LOLIN, and TI photos stay on their sites. Adafruit shop JPEGs are hotlinked the same way: the Adafruit Learning System text is CC BY-SA, but these shop photos are not republished here.
+
+The AliExpress links are the purchase links from the original module list. The photos are of the official part or the closest official board, not of that exact AliExpress listing. Wemos does not sell a classic-ESP32 "D1 Mini"; the official ESP32-WROOM board in that family is the LOLIN D32, and the only image `wemos.cc` serves for it is a 16×16 thumbnail.
+
+### SGP41
+
+- Sensor: [Sensirion SGP41](https://sensirion.com/products/catalog/SGP41). Photo: [webp](https://sensirion.com/media/portfolio/product/image/67113b8f-5ff8-4c9c-86bf-836bbd5cf902.webp).
+- Breakout of the same sensor: [Adafruit 6455](https://www.adafruit.com/product/6455). Photo: [JPEG](https://cdn-shop.adafruit.com/970x728/6455-05.jpg).
+- Purchase: [AliExpress 1005009523201465](https://pl.aliexpress.com/item/1005009523201465.html).
+
+![SGP41 on sensirion.com](https://sensirion.com/media/portfolio/product/image/67113b8f-5ff8-4c9c-86bf-836bbd5cf902.webp)
+
+### SCD30
+
+- Sensor: [Sensirion SCD30](https://sensirion.com/products/catalog/SCD30). Photo: [webp](https://sensirion.com/media/portfolio/product/image/4b4053f1-f7ef-43d2-bfe0-b2f00cfe34ba.webp).
+- Breakout: [Adafruit 4867](https://www.adafruit.com/product/4867). Photo: [JPEG](https://cdn-shop.adafruit.com/970x728/4867-07.jpg).
+- Purchase: [AliExpress 1005012719322072](https://pl.aliexpress.com/item/1005012719322072.html).
+
+![SCD30 on sensirion.com](https://sensirion.com/media/portfolio/product/image/4b4053f1-f7ef-43d2-bfe0-b2f00cfe34ba.webp)
+
+### SCD41
+
+- Sensor: [Sensirion SCD41](https://sensirion.com/products/catalog/SCD41). Photo: [webp](https://sensirion.com/media/portfolio/product/image/0dbb13dc-abee-4dbf-a0d0-68cc881b5486.webp).
+- Breakout: [Adafruit 5190](https://www.adafruit.com/product/5190). Photo: [JPEG](https://cdn-shop.adafruit.com/970x728/5190-06.jpg).
+- Purchase: [AliExpress 1005009897956849](https://pl.aliexpress.com/item/1005009897956849.html).
+
+![SCD41 on sensirion.com](https://sensirion.com/media/portfolio/product/image/0dbb13dc-abee-4dbf-a0d0-68cc881b5486.webp)
+
+### SHT45
+
+- Sensor: [Sensirion SHT45](https://sensirion.com/products/catalog/SHT45). Photo: [webp](https://sensirion.com/media/portfolio/series/image/07fb657d-331a-4652-b79f-0240926500f1.webp).
+- Breakout: [Adafruit 5665](https://www.adafruit.com/product/5665). Photo: [JPEG](https://cdn-shop.adafruit.com/970x728/5665-01.jpg).
+- Purchase: [AliExpress 1005012546290193](https://pl.aliexpress.com/item/1005012546290193.html).
+
+![SHT45 series image on sensirion.com](https://sensirion.com/media/portfolio/series/image/07fb657d-331a-4652-b79f-0240926500f1.webp)
+
+### SPS30
+
+- Sensor: [Sensirion SPS30](https://sensirion.com/products/catalog/SPS30). Photo: [webp](https://sensirion.com/media/portfolio/series/image/4df6fc7a-b697-493b-aa0f-f203ba562e11.webp).
+- Purchase: [AliExpress 1005009874188645](https://pl.aliexpress.com/item/1005009874188645.html).
+
+![SPS30 on sensirion.com](https://sensirion.com/media/portfolio/series/image/4df6fc7a-b697-493b-aa0f-f203ba562e11.webp)
+
+### BQ25185 charger with 5 V boost
+
+- Board: [Adafruit 6106](https://www.adafruit.com/product/6106). Learn guide: [bq25185 USB / DC / Solar Charger with 5V Boost](https://learn.adafruit.com/adafruit-bq25185-usb-dc-solar-charger-with-5v-boost-board). Photo: [JPEG](https://cdn-shop.adafruit.com/970x728/6106-00.jpg). A second learn-guide photo: [components_6106-01.jpg](https://cdn-learn.adafruit.com/assets/assets/000/133/931/original/components_6106-01.jpg).
+- Purchase (clone): [AliExpress 1005008650602873](https://pl.aliexpress.com/item/1005008650602873.html).
+
+![Adafruit 6106](https://cdn-shop.adafruit.com/970x728/6106-00.jpg)
+
+### TPS63020 3.3 V buck-boost
+
+Texas Instruments does not sell the small AliExpress module. The official board is the evaluation module.
+
+- Chip and EVM: [TPS63020](https://www.ti.com/product/TPS63020), [TPS63020EVM-487](https://www.ti.com/tool/TPS63020EVM-487). Photo: [EVM](https://dam.ti.com/transform/80b8c8ec-af00-4c47-9283-63e1bb9eab2d/TPS63020EVM-487-Angled).
+- Purchase (module): [AliExpress 1005001949409346](https://pl.aliexpress.com/item/1005001949409346.html).
+
+![TI TPS63020EVM-487](https://dam.ti.com/transform/80b8c8ec-af00-4c47-9283-63e1bb9eab2d/TPS63020EVM-487-Angled)
+
+### ESP32 WeMos D1 Mini / LOLIN32-mini class
+
+Wemos/LOLIN's current catalog has the LOLIN D32, not a classic-ESP32 D1 Mini. The D1 Mini ESP32 boards on AliExpress copy that footprint class.
+
+- Official board page: [LOLIN D32](https://www.wemos.cc/en/latest/d32/d32.html). Photo (16×16, the only image that page's files return): [JPEG](https://www.wemos.cc/en/latest/_images/d32_v1.0.0_1_16x16.jpg).
+- Purchase: [AliExpress 1005008273255710](https://pl.aliexpress.com/item/1005008273255710.html).
+
+![LOLIN D32 thumbnail on wemos.cc](https://www.wemos.cc/en/latest/_images/d32_v1.0.0_1_16x16.jpg)
+
+### ESP32-S3-DevKitC-1 N16R8
+
+- Espressif board: [ESP32-S3-DevKitC-1](https://www.espressif.com/en/products/devkits/esp32-s3-devkitc-1). Guide: [v1.1 user guide](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/esp32-s3-devkitc-1/user_guide_v1.1.html). Photo: [isometric PNG](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png).
+- Purchase: [AliExpress 1005004617322170](https://pl.aliexpress.com/item/1005004617322170.html).
+
+![ESP32-S3-DevKitC-1 v1.1 on docs.espressif.com](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32s3/_images/esp32-s3-devkitc-1-v1.1-isometric.png)
+
 
 ## Wiring
 
