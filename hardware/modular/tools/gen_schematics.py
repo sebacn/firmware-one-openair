@@ -450,7 +450,7 @@ class Sch:
   (title_block
     (title "{esc(self.title)}")
     (date "2026-11-25")
-    (rev "A")
+    (rev "B")
     (company "DIY modular outdoor monitor")
 {comments}
   )
@@ -495,28 +495,52 @@ def build_libraries(variant: str) -> dict[str, SymbolDef]:
             half_w=15.24,
         )
     )
+    # Header along the bottom edge, left to right on the silkscreen:
+    # VIN, VU, D-, D+, G, BAT, 5V, EN. Drawn top to bottom. TS is a pad,
+    # not one of those header pins (Adafruit 6106 ties it through R16).
     add(
         box_symbol(
             "Modular:BQ25185",
-            [("VIN", "power_in"), ("BAT", "power_in"), ("TS", "passive"), ("GND", "power_in")],
-            [("5V", "power_out"), ("EN", "passive")],
-            half_w=20.32,
+            [("TS pad", "passive")],
+            [
+                ("VIN", "power_in"),
+                ("VU", "passive"),
+                ("D-", "passive"),
+                ("D+", "passive"),
+                ("G", "power_in"),
+                ("BAT", "power_in"),
+                ("5V", "power_out"),
+                ("EN", "passive"),
+            ],
+            half_w=16.51,
         )
     )
+    # Photo of the 26 x 18 mm module: left edge GND then VIN, right edge GND then
+    # OUT, bottom pads PS then EN. PS is tied low (power-save). EN is tied to VIN.
     add(
         box_symbol(
             "Modular:TPS63020",
-            [("VIN", "power_in"), ("EN", "passive")],
-            [("VOUT", "power_out"), ("GND", "power_in")],
-            half_w=17.78,
+            [
+                ("GND", "power_in"),
+                ("VIN", "power_in"),
+                ("PS", "passive"),
+                ("EN", "passive"),
+            ],
+            [
+                ("GND", "power_in"),
+                ("OUT", "power_out"),
+            ],
+            half_w=15.24,
         )
     )
     if variant == "A":
+        # LOLIN32 Lite header. GPIO21 is not broken out. GPIO22 is the
+        # active-low blue LED, so SCL is GPIO23 (the variant's Wire default).
         mcu_right = [
-            ("IO21/D2", "bidirectional"),
-            ("IO22/D1", "bidirectional"),
-            ("IO26/D0", "output"),
-            ("IO36/A0", "passive"),
+            ("IO19", "bidirectional"),
+            ("IO23", "bidirectional"),
+            ("IO26", "output"),
+            ("IO36/VP", "passive"),
         ]
         mcu_id = "Modular:MCU_A"
     else:
@@ -535,9 +559,38 @@ def build_libraries(variant: str) -> dict[str, SymbolDef]:
             half_w=20.32,
         )
     )
-    i2c4 = [("VCC", "power_in"), ("GND", "power_in"), ("SCL", "bidirectional"), ("SDA", "bidirectional")]
-    add(box_symbol("Modular:SGP41", [], i2c4, half_w=15.24))
-    add(box_symbol("Modular:SHT45", [], i2c4, half_w=15.24))
+    # Adafruit 6455 / STEMMA QT header, top to bottom with VIN at the top
+    # of the row: VIN, 3.3V (regulator output, leave open), GND, SCL, SDA.
+    add(
+        box_symbol(
+            "Modular:SGP41",
+            [],
+            [
+                ("VIN", "power_in"),
+                ("3.3V", "passive"),
+                ("GND", "power_in"),
+                ("SCL", "bidirectional"),
+                ("SDA", "bidirectional"),
+            ],
+            half_w=15.24,
+        )
+    )
+    # Seller header order: VIN, 3Vo, GND, SCL, SDA. 3Vo is the regulator
+    # output and is left open. VIN is fed from 3.3 V.
+    add(
+        box_symbol(
+            "Modular:SHT45",
+            [],
+            [
+                ("VIN", "power_in"),
+                ("3Vo", "passive"),
+                ("GND", "power_in"),
+                ("SCL", "bidirectional"),
+                ("SDA", "bidirectional"),
+            ],
+            half_w=15.24,
+        )
+    )
     # Header on the measured 13.4 x 21.6 mm carrier, left to right on the label
     # side: GND, VCC, SCL, SDA. The symbol lists that order top to bottom.
     scd41_pins = [
@@ -547,14 +600,20 @@ def build_libraries(variant: str) -> dict[str, SymbolDef]:
         ("SDA", "bidirectional"),
     ]
     add(box_symbol("Modular:SCD41", [], scd41_pins, half_w=15.24))
-    add(
-        box_symbol(
-            "Modular:SCD30",
-            [("VDD", "power_in"), ("GND", "power_in"), ("SCL", "bidirectional"), ("SDA", "bidirectional")],
-            [("RDY", "passive"), ("PWM", "passive"), ("SEL", "passive")],
-            half_w=17.78,
-        )
-    )
+    # Sensirion SCD30 7-pin header, datasheet order, top to bottom.
+    # SEL open or tied to GND selects I2C. The sheet ties it to GND.
+    # Pins are on the left so the symbol can sit in the lower-left margin,
+    # clear of U8 and of the title block.
+    scd30_pins = [
+        ("VDD", "power_in"),
+        ("GND", "power_in"),
+        ("TX/SCL", "bidirectional"),
+        ("RX/SDA", "bidirectional"),
+        ("RDY", "passive"),
+        ("PWM", "passive"),
+        ("SEL", "passive"),
+    ]
+    add(box_symbol("Modular:SCD30", scd30_pins, [], half_w=17.78))
     add(
         box_symbol(
             "Modular:SPS30",
@@ -580,20 +639,21 @@ def wire_pins(sch: Sch, pins: dict, mapping: list[tuple]) -> None:
 def build(variant: str) -> Sch:
     if variant == "A":
         project = "modular-a"
-        title = "Modular outdoor monitor — variant A (ESP32-WROOM-32 D1 Mini)"
+        title = "Modular outdoor monitor — variant A (WEMOS LOLIN32 Lite)"
         comments = [
             "Not the AirGradient V1.3 PCB. Off-the-shelf modules only.",
-            "SDA GPIO21/D2, SCL GPIO22/D1, SPS30 EN GPIO26/D0, VBAT ADC GPIO36/A0",
+            "LOLIN32 Lite: SDA GPIO19, SCL GPIO23, SPS30 EN GPIO26, VBAT ADC GPIO36/VP.",
+            "GPIO21 is not on the header. GPIO22 is the blue LED. Do not use the onboard charger with the BQ25185.",
             "I2C 100 kHz, 3.3 V logic. Fit SCD30 (0x61) or SCD41 (0x62), not both.",
-            "A4 landscape 297 x 210 mm. Rev A, 2026-11-25.",
+            "A4 landscape 297 x 210 mm. Rev B, 2026-11-25.",
         ]
         mcu_id = "Modular:MCU_A"
-        mcu_value = "ESP32 D1 Mini / LOLIN32-mini"
+        mcu_value = "WEMOS LOLIN32 Lite"
         gpio_line = (
-            "Variant A: SDA GPIO21 (D2), SCL GPIO22 (D1), SPS30 EN GPIO26 (D0, active high), VBAT ADC GPIO36 (A0, ADC1)."
+            "Variant A LOLIN32 Lite: SDA GPIO19, SCL GPIO23, SPS30 EN GPIO26 (active high), VBAT ADC GPIO36/VP (ADC1)."
         )
         avoid_line = (
-            "Also leave open: GPIO0/2/12/15 (strap), GPIO1/TX, GPIO3/RX, GPIO6-11 (flash), GPIO4 and GPIO5/D8."
+            "Also leave open: GPIO0/2/12/15 (strap), GPIO22 (LED, active low), GPIO1/TX, GPIO3/RX, GPIO6-11 (flash), GPIO4 and GPIO5."
         )
     else:
         project = "modular-b"
@@ -602,15 +662,15 @@ def build(variant: str) -> Sch:
             "Not the AirGradient V1.3 PCB. Off-the-shelf modules only.",
             "SDA GPIO8, SCL GPIO9, SPS30 EN GPIO7, VBAT ADC GPIO6 (ADC1)",
             "N16R8: 16 MB quad flash, 8 MB octal PSRAM. Do not use GPIO33-37.",
-            "A4 landscape 297 x 210 mm. Rev A, 2026-11-25.",
+            "A4 landscape 297 x 210 mm. Rev B, 2026-11-25.",
         ]
         mcu_id = "Modular:MCU_B"
-        mcu_value = "ESP32-S3-DevKitC-1 N16R8"
+        mcu_value = "ESP32-S3 N16R8 AI-S3"
         gpio_line = (
             "Variant B N16R8: SDA GPIO8, SCL GPIO9, SPS30 EN GPIO7 (active high), VBAT ADC GPIO6 (ADC1)."
         )
         avoid_line = (
-            "Also leave open: GPIO0/3/45/46 (strap), GPIO19/20 (USB), GPIO43/44 (UART), GPIO33-37 (octal PSRAM)."
+            "Also leave open: GPIO0/3/45/46 (strap), GPIO19/20 (USB), GPIO43/44 (UART), GPIO33-37 (octal PSRAM), GPIO48 (RGB LED)."
         )
 
     sch = Sch(project, title, comments)
@@ -660,26 +720,32 @@ def build(variant: str) -> Sch:
         sch,
         chg,
         [
-            ("VIN", "pwr", "VIN_SOLAR", "left"),
-            ("BAT", "pwr", "VBAT", "left"),
-            ("TS", "lbl", "TS", "left"),
-            ("GND", "pwr", "GND", "left"),
+            ("TS pad", "lbl", "TS", "left"),
+            ("VIN", "pwr", "VIN_SOLAR", "right"),
+            ("VU", "nc", None, "right"),
+            ("D-", "nc", None, "right"),
+            ("D+", "nc", None, "right"),
+            ("G", "pwr", "GND", "right"),
+            ("BAT", "pwr", "VBAT", "right"),
             ("5V", "pwr", "+5V_SPS", "right"),
             ("EN", "lbl", "BOOST_EN", "right"),
         ],
     )
 
-    tps = sch.place("Modular:TPS63020", "U2", "TPS63020 set to 3.3V", 114.3, 99.06)
+    tps = sch.place("Modular:TPS63020", "U2", "TPS63020 bridge 3V3", 114.3, 109.22)
     wire_pins(
         sch,
         tps,
         [
             ("VIN", "pwr", "VBAT", "left"),
+            ("PS", "pwr", "GND", "left"),
             ("EN", "pwr", "VBAT", "left"),
-            ("VOUT", "pwr", "+3V3", "right"),
+            ("OUT", "pwr", "+3V3", "right"),
             ("GND", "pwr", "GND", "right"),
         ],
     )
+    # Both edge GND pads are the same net. The name GND is stored once.
+    sch.stub(tps["1"], "left", "pwr", "GND", center=tps["_center"])
 
     rtop = sch.place("Device:R", "R1", "100k", 33.02, 137.16)
     wire_pins(
@@ -743,7 +809,7 @@ def build(variant: str) -> Sch:
     # --- MCU and sensors ---
     mcu = sch.place(mcu_id, "U3", mcu_value, 175.26, 71.12)
     if variant == "A":
-        sig = [("IO21/D2", "SDA"), ("IO22/D1", "SCL"), ("IO26/D0", "SPS_EN"), ("IO36/A0", "VBAT_SENSE")]
+        sig = [("IO19", "SDA"), ("IO23", "SCL"), ("IO26", "SPS_EN"), ("IO36/VP", "VBAT_SENSE")]
     else:
         sig = [("IO8", "SDA"), ("IO9", "SCL"), ("IO7", "SPS_EN"), ("IO6", "VBAT_SENSE")]
     wire_pins(
@@ -782,36 +848,39 @@ def build(variant: str) -> Sch:
         sch,
         sgp,
         [
-            ("VCC", "pwr", "+3V3", "right"),
+            ("VIN", "pwr", "+3V3", "right"),
+            ("3.3V", "nc", None, "right"),
             ("GND", "pwr", "GND", "right"),
             ("SCL", "lbl", "SCL", "right"),
             ("SDA", "lbl", "SDA", "right"),
         ],
     )
-    sht = sch.place("Modular:SHT45", "U5", "SHT45-AD1B 0x44", 248.92, 96.52)
+    sht = sch.place("Modular:SHT45", "U5", "SHT45 0x44 VIN=3.3V", 248.92, 96.52)
     wire_pins(
         sch,
         sht,
         [
-            ("VCC", "pwr", "+3V3", "right"),
+            ("VIN", "pwr", "+3V3", "right"),
+            ("3Vo", "nc", None, "right"),
             ("GND", "pwr", "GND", "right"),
             ("SCL", "lbl", "SCL", "right"),
             ("SDA", "lbl", "SDA", "right"),
         ],
     )
-    scd30 = sch.place("Modular:SCD30", "U6", "SCD30 0x61  FIT ONE", 152.4, 114.3)
-    # SCD30 center collides with R3. Move is handled by coordinates above... check later.
+    # Kept clear of U2. An earlier placement put these pins on top of the TPS63020.
+    # Lower left, pins facing the margin. Clear of U8 and the title block.
+    scd30 = sch.place("Modular:SCD30", "U6", "SCD30 0x61  FIT ONE", 40.64, 175.26)
     wire_pins(
         sch,
         scd30,
         [
             ("VDD", "pwr", "+3V3", "left"),
             ("GND", "pwr", "GND", "left"),
-            ("SCL", "lbl", "SCL", "left"),
-            ("SDA", "lbl", "SDA", "left"),
-            ("RDY", "nc", None, "right"),
-            ("PWM", "nc", None, "right"),
-            ("SEL", "pwr", "GND", "right"),
+            ("TX/SCL", "lbl", "SCL", "left"),
+            ("RX/SDA", "lbl", "SDA", "left"),
+            ("RDY", "nc", None, "left"),
+            ("PWM", "nc", None, "left"),
+            ("SEL", "pwr", "GND", "left"),
         ],
     )
     scd41 = sch.place("Modular:SCD41", "U7", "SCD41 0x62  FIT ONE", 248.92, 137.16)
