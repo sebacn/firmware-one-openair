@@ -125,6 +125,23 @@ Colours in the renders: blue SPS30, green SHT45, yellow SGP41, orange SCD30, pur
 
 Browser assemblies, one mesh per part, are in [`assembly/`](assembly/index.html). Open `assembly/index.html` (GitHub raw via raw.githack works; a local `file://` page will not load the GLB). The shell can be faded or hidden. Extra PNGs per variant: `variant-N-legend.png` (modules only, with a colour key), `variant-N-section.png` (shell cut away), and labelled `variant-N-front.png`, `variant-N-side.png`, `variant-N-top.png`.
 
+## Outdoor DIY variants
+
+These two follow the published DIY outdoor STLs in [`reference-outdoor/`](reference-outdoor/README.md) (CC BY-SA 4.0, same files as `hardware/open-air/enclosure/`). The footprint stays the original top, **91.5 × 86.7 mm**. Only the height changes.
+
+| | Original | A, battery flat | B, battery vertical |
+| --- | --- | --- | --- |
+| Plan | 91.5 × 86.7 mm | 91.5 × 86.7 mm | 91.5 × 86.7 mm |
+| Body height | 81.9 mm cover, 85 mm assembled | **112 mm** (+30 mm attic) | **94 mm** (+12 mm) |
+
+The floor is the same in both: SPS30 over the two bottom ports, SCD30 beside it, SGP41 on the USB wall, SHT45 on the intake, BQ25185 at the original USB height, M8 hole Ø8.2 mm on the bottom. Soldered wiring uses the same 4.8 mm standoffs and tie slots.
+
+**A, flat.** The 70 × 50 × 18 mm pack lies under the lid, on a shelf above the electronics, so the cells are not in the sensor air. Easiest pack access. Tallest print. Heat from the ESP32 is one shelf below the cells.
+
+**B, vertical.** The pack stands on the side wall opposite the USB, 20 mm thick, so the original height only grows by 12 mm. The sensor floor is unchanged. The pack is closer to the SPS30 exhaust wall than in A, so keep the thermal divider between them.
+
+Print both in ASA or PETG, floor down, as in the earlier note. Files: `outdoor-flat/` and `outdoor-vertical/` (`shell.stl`, `lid.stl`, `grill.stl`). Assemblies: `assembly/outdoor-flat.glb` and `assembly/outdoor-vertical.glb`. The viewer lists these first and keeps the older three under Previous. Stills: `renders/outdoor-flat-*.png` and `renders/outdoor-vertical-*.png`.
+
 ## Open points
 
 - The shell is a new body in the original style. It is not a cut of the AirGradient STL, so screw bosses from the original kit do not transfer.

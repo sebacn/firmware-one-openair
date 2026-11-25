@@ -17,9 +17,15 @@
   <header>
     <label>Variant
       <select id="variant">
-        <option value="1">1 — rear battery</option>
-        <option value="2">2 — battery plinth</option>
-        <option value="3" selected>3 — sensor pod</option>
+        <optgroup label="Outdoor DIY">
+          <option value="outdoor-flat" selected>A — battery flat on top</option>
+          <option value="outdoor-vertical">B — battery standing on the side</option>
+        </optgroup>
+        <optgroup label="Previous">
+          <option value="variant-1">1 — rear battery</option>
+          <option value="variant-2">2 — battery plinth</option>
+          <option value="variant-3">3 — sensor pod</option>
+        </optgroup>
       </select>
     </label>
     <label><input id="hide" type="checkbox" /> Hide shell</label>
@@ -78,7 +84,7 @@
       }
       shellMats = [];
       legendEl.textContent = "";
-      new GLTFLoader().load("variant-" + n + ".glb", (gltf) => {
+      new GLTFLoader().load(n + ".glb", (gltf) => {
         scene.add(gltf.scene);
         const box = new THREE.Box3().setFromObject(gltf.scene);
         const size = box.getSize(new THREE.Vector3());
@@ -109,7 +115,7 @@
       renderer.setSize(view.clientWidth, view.clientHeight);
     });
     (function tick() { requestAnimationFrame(tick); controls.update(); renderer.render(scene, camera); })();
-    load(3);
+    load("outdoor-flat");
   </script>
 </body>
 </html>
