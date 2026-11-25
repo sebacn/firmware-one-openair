@@ -1,0 +1,39 @@
+EESchema-LIBRARY Version 2.3
+#encoding utf-8
+#SamacSys ECAD Model SN74LV4052APWR
+#/288140/163011/2.49/16/3/Integrated Circuit
+DEF SN74LV4052APWR IC 0 30 Y Y 1 F N
+F0 "IC" 1050 300 50 H V L CNN
+F1 "SN74LV4052APWR" 1050 200 50 H V L CNN
+F2 "SOP65P640X120-16N" 1050 100 50 H I L CNN
+F3 "http://www.ti.com/lit/gpn/sn74lv4052a" 1050 0 50 H I L CNN
+F4 "Dual 4-channel analog multiplexer & demultiplexer" 1050 -100 50 H I L CNN "Description"
+F5 "1.2" 1050 -200 50 H I L CNN "Height"
+F6 "Texas Instruments" 1050 -300 50 H I L CNN "Manufacturer_Name"
+F7 "SN74LV4052APWR" 1050 -400 50 H I L CNN "Manufacturer_Part_Number"
+F8 "595-SN74LV4052APWR" 1050 -500 50 H I L CNN "Mouser Part Number"
+F9 "https://www.mouser.co.uk/ProductDetail/Texas-Instruments/SN74LV4052APWR?qs=3pnr37ZAbK%2FrVyc9dgeZqA%3D%3D" 1050 -600 50 H I L CNN "Mouser Price/Stock"
+F10 "SN74LV4052APWR" 1050 -700 50 H I L CNN "Arrow Part Number"
+F11 "https://www.arrow.com/en/products/sn74lv4052apwr/texas-instruments" 1050 -800 50 H I L CNN "Arrow Price/Stock"
+DRAW
+X 2Y0 1 0 0 200 R 50 50 0 0 P
+X 2Y2 2 0 -100 200 R 50 50 0 0 P
+X 2-COM 3 0 -200 200 R 50 50 0 0 P
+X 2Y3 4 0 -300 200 R 50 50 0 0 P
+X 2Y1 5 0 -400 200 R 50 50 0 0 P
+X INH 6 0 -500 200 R 50 50 0 0 P
+X GND_1 7 0 -600 200 R 50 50 0 0 P
+X GND_2 8 0 -700 200 R 50 50 0 0 P
+X VCC 16 1200 0 200 L 50 50 0 0 P
+X 1Y2 15 1200 -100 200 L 50 50 0 0 P
+X 1Y1 14 1200 -200 200 L 50 50 0 0 P
+X 1-COM 13 1200 -300 200 L 50 50 0 0 P
+X 1Y0 12 1200 -400 200 L 50 50 0 0 P
+X 1Y3 11 1200 -500 200 L 50 50 0 0 P
+X A 10 1200 -600 200 L 50 50 0 0 P
+X B 9 1200 -700 200 L 50 50 0 0 P
+P 5 0 1 6 200 100 1000 100 1000 -800 200 -800 200 100 N
+ENDDRAW
+ENDDEF
+#
+#End Library

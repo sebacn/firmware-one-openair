@@ -1,0 +1,8 @@
+(fp_lib_table
+  (lib (name "SGP30")(type "KiCad")(uri "${KIPRJMOD}/libs/SGP30")(options "")(descr ""))
+  (lib (name "05-JE")(type "KiCad")(uri "${KIPRJMOD}/libs/05PSL-JE/05-JE.pretty")(options "")(descr ""))
+  (lib (name "2N7002DW")(type "KiCad")(uri "${KIPRJMOD}/libs/2N7002DW")(options "")(descr ""))
+  (lib (name "Horizontal SMT Type Pin header")(type "KiCad")(uri "${KIPRJMOD}/libs/Horizontal SMT Type Pin header.pretty")(options "")(descr ""))
+  (lib (name "Logo")(type "KiCad")(uri "${KIPRJMOD}/libs/Logo.pretty")(options "")(descr ""))
+  (lib (name "SGP4X")(type "KiCad")(uri "${KIPRJMOD}/libs/SGP4X.pretty")(options "")(descr ""))
+)
