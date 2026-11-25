@@ -26,6 +26,7 @@ LAYOUTS = {
         ("BQ25185", "#d64550", (29, -1, 80.5), (29.2, 19.1, 6)),
         ("TPS63020", "#4aa3a2", (30, 18, 80.5), (26, 18, 5)),
         ("Battery", "#8d99ae", (0, -32, 42), (57, 22, 70)),
+        ("PCM", "#6b8f71", (0, -16, 8), (18, 8, 4)),
     ],
     2: [
         ("Battery", "#8d99ae", (0, -4, 13.4), (70, 57, 22)),
@@ -36,6 +37,7 @@ LAYOUTS = {
         ("ESP32", "#6b4c9a", (-6, 18, 104.8), (58, 28, 8)),
         ("BQ25185", "#d64550", (31, 1, 102.5), (29.2, 19.1, 6)),
         ("TPS63020", "#4aa3a2", (30, 20, 102.5), (26, 18, 5)),
+        ("PCM", "#6b8f71", (22, 18, 28), (16, 12, 4)),
     ],
     3: [
         ("SPS30", "#3d8bfd", (0, 7, 13.2), (41, 41, 12)),
@@ -46,8 +48,12 @@ LAYOUTS = {
         ("ESP32", "#6b4c9a", (-6, 20, 94.8), (58, 28, 8)),
         ("BQ25185", "#d64550", (29, 3, 92.5), (29.2, 19.1, 6)),
         ("TPS63020", "#4aa3a2", (30, 22, 92.5), (26, 18, 5)),
+        ("PCM", "#6b8f71", (32, -28, 72), (16, 12, 4)),
     ],
 }
+
+# M8x1 female receptacle: thread through the floor, nut and cups inside.
+M8_POS = {1: (28, -30), 2: (34, 32), 3: (28, -30)}
 
 VIEWS = {
     "front": (0, 0),
@@ -123,6 +129,7 @@ def render(variant, view_name, elev, azim, exploded=False, transparent=False, pa
     add_mesh(ax, lid, "#bfc6d0", 0.35 if exploded else 0.7)
     add_mesh(ax, grill, "#9aa3ad", 0.9)
     add_mesh(ax, divider, "#f4f1ea", 0.95)
+    add_mesh(ax, m8_mesh(variant), "#2c3338", 0.95)
 
     meshes = [shell, lid]
     for name, color, center, size in LAYOUTS[variant]:
@@ -152,6 +159,82 @@ def render(variant, view_name, elev, azim, exploded=False, transparent=False, pa
     ax.set_title(title, fontsize=12, pad=8)
     fig.tight_layout()
     fig.savefig(path, dpi=120)
+    plt.close(fig)
+
+
+def m8_mesh(variant):
+    x, y = M8_POS[variant]
+    thread = trimesh.creation.cylinder(radius=4.0, height=8, sections=20)
+    thread.apply_translation([x, y, 2.0])
+    nut = trimesh.creation.cylinder(radius=6.2, height=3.2, sections=6)
+    nut.apply_translation([x, y, 6.0])
+    cups = trimesh.creation.cylinder(radius=2.4, height=8, sections=16)
+    cups.apply_translation([x, y, 11.5])
+    return trimesh.util.concatenate([thread, nut, cups])
+
+
+def legend(variant):
+    fig = plt.figure(figsize=(9.2, 6.4))
+    ax = fig.add_subplot(121, projection="3d")
+    blocks = []
+    for name, color, center, size in LAYOUTS[variant]:
+        block = box_mesh(center, size)
+        add_mesh(ax, block, color, 1.0)
+        blocks.append(block)
+        c = np.asarray(center, float)
+        ax.text(c[0], c[1], c[2] + size[2] / 2 + 2, name, fontsize=8)
+    add_mesh(ax, m8_mesh(variant), "#2c3338", 1.0)
+    lo, hi = scene_bounds(blocks)
+    span = max((hi - lo).max() / 2, 40)
+    c = (lo + hi) / 2
+    ax.set_xlim(c[0] - span, c[0] + span)
+    ax.set_ylim(c[1] - span, c[1] + span)
+    ax.set_zlim(c[2] - span, c[2] + span)
+    ax.view_init(elev=22, azim=-58)
+    ax.set_axis_off()
+    ax.set_title(f"Variant {variant} modules", fontsize=12)
+    ax2 = fig.add_subplot(122)
+    ax2.set_xlim(0, 1)
+    ax2.set_ylim(0, len(LAYOUTS[variant]) + 2)
+    ax2.axis("off")
+    rows = list(LAYOUTS[variant]) + [("M8", "#2c3338", None, None)]
+    for i, (name, color, _c, _s) in enumerate(rows):
+        y = len(rows) - i
+        ax2.add_patch(plt.Rectangle((0.05, y - 0.35), 0.18, 0.7, color=color))
+        ax2.text(0.3, y, name, va="center", fontsize=11)
+    fig.tight_layout()
+    fig.savefig(RENDERS / f"variant-{variant}-legend.png", dpi=130)
+    plt.close(fig)
+
+
+def section(variant):
+    shell = trimesh.load(ROOT / f"variant-{variant}" / "shell.stl", force="mesh")
+    centers = shell.triangles_center
+    keep = centers[:, 0] > -2
+    cut = trimesh.Trimesh(vertices=shell.vertices, faces=shell.faces[keep], process=False)
+    fig = plt.figure(figsize=(8.2, 7.2))
+    ax = fig.add_subplot(111, projection="3d")
+    add_mesh(ax, cut, "#c5ccd4", 0.9)
+    for name, color, center, size in LAYOUTS[variant]:
+        block = box_mesh(center, size)
+        # Keep the half the cut opens, plus a little past the plane so labels remain.
+        if center[0] < -8:
+            continue
+        add_mesh(ax, block, color, 1.0)
+        c = np.asarray(center, float)
+        ax.text(c[0], c[1], c[2] + size[2] / 2 + 1.5, name, fontsize=7)
+    add_mesh(ax, m8_mesh(variant), "#2c3338", 1.0)
+    lo, hi = shell.bounds
+    span = (hi - lo).max() / 2
+    c = (lo + hi) / 2
+    ax.set_xlim(c[0] - span, c[0] + span)
+    ax.set_ylim(c[1] - span, c[1] + span)
+    ax.set_zlim(c[2] - span, c[2] + span)
+    ax.view_init(elev=18, azim=-70)
+    ax.set_axis_off()
+    ax.set_title(f"Variant {variant} — section", fontsize=12)
+    fig.tight_layout()
+    fig.savefig(RENDERS / f"variant-{variant}-section.png", dpi=130)
     plt.close(fig)
 
 
@@ -194,6 +277,53 @@ def comparison():
     plt.close(fig)
 
 
+def paint(mesh, hexcolor, alpha=255):
+    rgb = matplotlib.colors.to_rgb(hexcolor)
+    mesh.visual.face_colors = [int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255), alpha]
+    return mesh
+
+
+def export_glb():
+    out = ROOT / "assembly"
+    out.mkdir(exist_ok=True)
+    for variant in (1, 2, 3):
+        folder = ROOT / f"variant-{variant}"
+        scene = trimesh.Scene()
+        shell = trimesh.load(folder / "shell.stl", force="mesh")
+        lid = trimesh.load(folder / "lid.stl", force="mesh")
+        grill = trimesh.load(folder / "grill.stl", force="mesh")
+        divider = trimesh.load(folder / "divider.stl", force="mesh")
+        grill.apply_translation([6, 4, -1.2])
+        if variant == 1:
+            divider.apply_translation([-18, 6, 24])
+        elif variant == 2:
+            divider.apply_translation([-18, 8, 52])
+        else:
+            divider.apply_translation([-18, 4, 18])
+        lid.apply_translation([0, 0, float(shell.bounds[1, 2]) - 1])
+        named = {
+            "Shell": paint(shell, "#d9dde3", 90),
+            "Lid": paint(lid, "#bfc6d0", 140),
+            "Grill": paint(grill, "#9aa3ad"),
+            "Divider": paint(divider, "#f4f1ea"),
+            "M8": paint(m8_mesh(variant), "#2c3338"),
+        }
+        labels = {
+            "ESP32": "ESP32 LOLIN32",
+            "Battery": "1S3P battery",
+            "SCD30": "SCD30",
+            "PCM": "PCM",
+        }
+        for name, color, center, size in LAYOUTS[variant]:
+            named[labels.get(name, name)] = paint(box_mesh(center, size), color)
+        named["M8 connector"] = named.pop("M8")
+        for name, mesh in named.items():
+            scene.add_geometry(mesh, node_name=name, geom_name=name)
+        path = out / f"variant-{variant}.glb"
+        scene.export(path)
+        print("glb", path, path.stat().st_size)
+
+
 def main():
     RENDERS.mkdir(exist_ok=True)
     for variant in (1, 2, 3):
@@ -215,8 +345,11 @@ def main():
             exploded=True,
             path=RENDERS / f"variant-{variant}-exploded.png",
         )
+        legend(variant)
+        section(variant)
         print("rendered", variant)
     comparison()
+    export_glb()
     print("comparison", RENDERS / "comparison.png")
 
 

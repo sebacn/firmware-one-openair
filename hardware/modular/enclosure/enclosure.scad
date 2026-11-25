@@ -56,13 +56,21 @@ module usb_slot() {
     translate([-W / 2 - 2, 8, h]) cube([8, 12, 7]);
 }
 
+// M8x1 female front-mount receptacle (IEC 61076-2-104, A-coded, 2 pin,
+// solder cups, IP67). Panel hole is 8.2 mm so the M8x1 thread passes.
+// The 14 mm counterbore is the keep-out for the nut (about 11 mm across
+// flats) and the solder cups, 12 mm up from the floor.
 module solar_hole() {
-    // SP13 IP68 2-pin panel mount. Thread needs a 13 mm hole.
-    // Variant 2 keeps the hole in the front corner so it misses the battery plinth.
     if (variant == 2)
-        translate([34, 32, -2]) cylinder(h = 8, d = 13, $fn = 32);
+        translate([34, 32, -2]) {
+            cylinder(h = 8, d = 8.2, $fn = 32);
+            translate([0, 0, 4]) cylinder(h = 14, d = 14, $fn = 32);
+        }
     else
-        translate([28, -30, -2]) cylinder(h = 8, d = 13, $fn = 32);
+        translate([28, -30, -2]) {
+            cylinder(h = 8, d = 8.2, $fn = 32);
+            translate([0, 0, 4]) cylinder(h = 14, d = 14, $fn = 32);
+        }
 }
 
 module pm_ports() {

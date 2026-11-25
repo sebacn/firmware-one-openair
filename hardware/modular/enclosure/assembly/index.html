@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Modular enclosure assemblies</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #f4f5f7; color: #1c1c1c; font: 14px/1.4 system-ui, sans-serif; }
+    header { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; padding: 10px 14px; background: #fff; border-bottom: 1px solid #ddd; }
+    #view { position: absolute; inset: 52px 0 0 0; }
+    label { display: inline-flex; gap: 6px; align-items: center; }
+    #legend { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+    .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+    button, select { font: inherit; }
+  </style>
+</head>
+<body>
+  <header>
+    <label>Variant
+      <select id="variant">
+        <option value="1">1 — rear battery</option>
+        <option value="2">2 — battery plinth</option>
+        <option value="3" selected>3 — sensor pod</option>
+      </select>
+    </label>
+    <label><input id="hide" type="checkbox" /> Hide shell</label>
+    <label>Shell opacity <input id="opacity" type="range" min="0" max="100" value="35" /></label>
+    <div id="legend"></div>
+  </header>
+  <div id="view"></div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+    const view = document.getElementById("view");
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.setSize(view.clientWidth, view.clientHeight);
+    renderer.setClearColor(0xf4f5f7);
+    view.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, view.clientWidth / view.clientHeight, 0.1, 2000);
+    camera.position.set(160, -180, 120);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 40);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const key = new THREE.DirectionalLight(0xffffff, 1.1);
+    key.position.set(80, -40, 160);
+    scene.add(key);
+    const legendEl = document.getElementById("legend");
+    const hide = document.getElementById("hide");
+    const opacity = document.getElementById("opacity");
+    let shellMats = [];
+
+    function applyShell() {
+      const a = hide.checked ? 0 : Number(opacity.value) / 100;
+      for (const m of shellMats) {
+        m.transparent = true;
+        m.opacity = a;
+        m.depthWrite = a > 0.9;
+      }
+    }
+    hide.onchange = applyShell;
+    opacity.oninput = applyShell;
+
+    function load(n) {
+      for (const child of [...scene.children]) {
+        if (child.isLight) continue;
+        scene.remove(child);
+      }
+      shellMats = [];
+      legendEl.textContent = "";
+      new GLTFLoader().load("variant-" + n + ".glb", (gltf) => {
+        scene.add(gltf.scene);
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        controls.target.copy(center);
+        camera.position.set(center.x + size.x, center.y - size.y * 1.4, center.z + size.z * 0.7);
+        controls.update();
+        const seen = new Set();
+        gltf.scene.traverse((obj) => {
+          if (!obj.isMesh) return;
+          const mats = [].concat(obj.material);
+          const name = obj.name || "part";
+          if (name === "Shell" || name === "Lid") shellMats.push(...mats);
+          if (seen.has(name)) return;
+          seen.add(name);
+          const color = mats[0] && mats[0].color ? "#" + mats[0].color.getHexString() : "#ccc";
+          const item = document.createElement("span");
+          item.innerHTML = `<i class="swatch" style="background:${color}"></i> ${name}`;
+          legendEl.appendChild(item);
+        });
+        applyShell();
+      });
+    }
+    document.getElementById("variant").onchange = (e) => load(e.target.value);
+    addEventListener("resize", () => {
+      camera.aspect = view.clientWidth / view.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(view.clientWidth, view.clientHeight);
+    });
+    (function tick() { requestAnimationFrame(tick); controls.update(); renderer.render(scene, camera); })();
+    load(3);
+  </script>
+</body>
+</html>

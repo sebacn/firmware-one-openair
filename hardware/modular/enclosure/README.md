@@ -43,7 +43,9 @@ Keep the SPS30 inlet and outlet leads out of the cool bay. Run them in the exhau
 
 ## Solar connector
 
-**SP13 IP68, 2-pin, panel mount, rear nut, solder cups.** The shell has a **13 mm** round hole in the bottom face, which is the usual SP13 panel cutout. It is on the bottom so rain does not sit in the threads, and it is offset from the particulate ports. Wires from the cups go to the BQ25185 VIN and GND, with a tie anchor before the first bend.
+**M8 female panel receptacle, front mount, solder cups, IP67.** The part used for the hole is an IEC 61076-2-104 A-coded **2-pin** socket with an **M8×1** thread, the same class as the Westsam “M8 A-code 2-pin female front mount socket, solder, M8×1.0” ([product page](https://en.westsaim.com.cn/Products_1/118.html)). Two pins are enough for VIN and GND and this exact part is sold. A 3-pin or 4-pin M8 is more common in catalogues, but it is not required.
+
+The shell hole is **Ø8.2 mm**, which lets the M8×1 thread through a 2.4 mm floor. Above the hole, inside the box, a **Ø14 mm × 12 mm** keep-out clears the nut (about 11 mm across the flats) and the solder cups. Tie the two soldered leads before they leave that pocket. The hole is on the bottom, offset from the particulate ports (front corner on variant 2, so it misses the battery).
 
 ## The three variants
 
@@ -59,7 +61,7 @@ Height 106 mm. The pack stands in a rear pocket (70 mm tall) with two strap bars
 
 ### Variant 2 — battery plinth
 
-Height 122 mm. The pack lies on the floor. Particulate air does **not** pass through that floor: inlet and outlet are 12 mm side holes so the pack does not block them. Sensors sit on a deck above the pack. Electronics are on top. USB-C is high on the side wall. The solar hole is in the front bottom corner, clear of the pack.
+Height 122 mm. The pack lies on the floor. Particulate air does **not** pass through that floor: inlet and outlet are 12 mm side holes so the pack does not block them. Sensors sit on a deck above the pack. Electronics are on top. USB-C is high on the side wall. The M8 hole is in the front bottom corner, clear of the pack.
 
 - Airflow: sideways inlet, good for rain, longer path than variant 1.
 - Heat: the pack is low and away from the ESP32, but it is still under the sensor deck.
@@ -95,11 +97,13 @@ The shell is the body. The grill covers the floor ports (variants 1 and 3). The 
 
 Front, back, side, top, and bottom PNGs use the same name pattern. Comparison sheet: [renders/comparison.png](renders/comparison.png) and [renders/comparison.pdf](renders/comparison.pdf).
 
-Colours in the renders: blue SPS30, green SHT45, yellow SGP41, orange SCD30, purple ESP32, red BQ25185, teal TPS63020, grey battery.
+Colours in the renders: blue SPS30, green SHT45, yellow SGP41, orange SCD30, purple ESP32, red BQ25185, teal TPS63020, grey battery, dark nut for the M8 receptacle, olive for a 1S PCM placeholder.
+
+Browser assemblies, one mesh per part, are in [`assembly/`](assembly/index.html). Open `assembly/index.html` (GitHub raw via raw.githack works; a local `file://` page will not load the GLB). The shell can be faded or hidden. Extra PNGs per variant: `variant-N-legend.png` (modules only, with a colour key), `variant-N-section.png` (shell cut away), and labelled `variant-N-front.png`, `variant-N-side.png`, `variant-N-top.png`.
 
 ## Open points
 
 - The shell is a new body in the original style. It is not a cut of the AirGradient STL, so screw bosses from the original kit do not transfer.
-- SP13 is the proposed solar connector. A GX16 or M12 can replace it if the hole is changed (GX16 is typically 16 mm, M12 is 12 mm).
+- The solar part is a 2-pin M8×1 front-mount receptacle, hole Ø8.2 mm. If the part in hand is a 3-pin or 4-pin M8 of the same thread, the hole does not change; use two pins and leave the others open.
 - The CO2 standoffs fit an SCD30. An SCD41 sits in the same bay with a shorter footprint.
 - The pack still needs a 1S PCM in series. The cradle does not include a PCM clip.
