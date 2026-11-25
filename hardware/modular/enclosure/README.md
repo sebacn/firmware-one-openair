@@ -47,11 +47,35 @@ Keep the SPS30 inlet and outlet leads out of the cool bay. Run them in the exhau
 
 The shell hole is **Ø8.2 mm**, which lets the M8×1 thread through a 2.4 mm floor. Above the hole, inside the box, a **Ø14 mm × 12 mm** keep-out clears the nut (about 11 mm across the flats) and the solder cups. Tie the two soldered leads before they leave that pocket. The hole is on the bottom, offset from the particulate ports (front corner on variant 2, so it misses the battery).
 
+## Original reference
+
+The production Open Air (O-1PST) is 91.5 × 86.7 × 85 mm in ASA ([spec sheet](https://www.airgradient.com/documents/spec-sheets/Spec_Sheet_AirGradient_Open_Air_O-1PST.pdf)). The [assembly instructions](https://www.airgradient.com/documentation/kb/kb-old-instructions-the-airgradient-open-air-outdoor-air-quality-monitor-o-1pst-kit-pcb-version-1.3) put the parts in the bottom shell and slide the top over a vertical PCB:
+
+- The Plantower PMS5003T lies in the bottom, over the downward vent. Air must enter from below and leave by a separate path so it does not loop. Temperature and humidity in that product are read inside the PMS5003T, not in free air.
+- The SenseAir S8 is screwed beside the particle sensor.
+- The SGP41 is on the PCB, facing outward, next to the USB-C receptacle.
+- The PCB (about 57 × 44 mm on `hardware/open-air/main-board/ag_outdoor.kicad_pcb`, USB1 on the short edge) stands upright. The status LED is visible on the bottom part.
+- The top shell measured here is 91.5 × 85.0 × 81.9 mm. Bottom part B is the open ring (83 × 83 × 27 mm). Bottom part A is the round grill (72 × 71 × 12 mm).
+
+![Original Open Air placement](renders/original-reference.png)
+
+Our shell keeps that floor: two 16 mm ports under the SPS30, the round grill over them, exhaust louvers on the opposite side, and the USB-C slot low on the same side wall in every variant. The SHT45 is the one deliberate change. The Open Air has no separate humidity sensor in free air, and AirGradient notes that the reading inside the particle module is not ambient. The SHT45 sits on the intake side, upstream of the SPS30, with its own vents.
+
+| Open Air part | Where it sits | Modular stand-in |
+| --- | --- | --- |
+| PMS5003T over the bottom vent | Floor, inlet down, exhaust to the side | SPS30, same ports |
+| SenseAir S8 beside the PM sensor | Floor, not in the exhaust | SCD30 (SCD41 uses the same screws) |
+| SGP41 facing out next to USB | Side wall by the USB opening | SGP41 |
+| No separate ambient T/RH | — | SHT45 on the intake side |
+| Vertical PCB | Back of the bottom shell | LOLIN32 or the ESP32-S3, standing |
+| USB-C on that PCB, low | Side of the bottom shell | BQ25185 USB-C, same opening |
+| No battery, no solar | — | Pack and M8 inlet, off the airflow |
+
 ## The three variants
 
-### Variant 1 — rear battery
+### Variant 1 — pack above the original stack
 
-Height 106 mm. The pack stands in a rear pocket (70 mm tall) with two strap bars. The SPS30 sits on the floor over two 16 mm ports; its exhaust leaves through side louvers. SHT45 and SGP41 share a front bay behind a separate divider wall, with their own side vents. SCD30 is mid-height on the opposite wall from the exhaust. ESP32, BQ25185, and TPS63020 are on the top shelf. The USB-C slot is on the lower side wall.
+Height 106 mm. The floor is the Open Air arrangement: SPS30, SCD30 beside it, SGP41 on the USB wall, SHT45 upstream, controller standing at the back, BQ25185 at the original USB height. The pack lies across the top, above that stack, so it does not cover the ports. The TPS63020 sits with the controller.
 
 - Airflow: inlet faces down, exhaust leaves sideways. Short ducts.
 - Heat: divider helps, but the battery and the electronics share one volume with the sensors.
@@ -59,9 +83,9 @@ Height 106 mm. The pack stands in a rear pocket (70 mm tall) with two strap bars
 - Print: shortest shell. Floor ports need no support if the grill is a separate part.
 - Size: closest to the original 82 mm height.
 
-### Variant 2 — battery plinth
+### Variant 2 — pack behind the original stack
 
-Height 122 mm. The pack lies on the floor. Particulate air does **not** pass through that floor: inlet and outlet are 12 mm side holes so the pack does not block them. Sensors sit on a deck above the pack. Electronics are on top. USB-C is high on the side wall. The M8 hole is in the front bottom corner, clear of the pack.
+Height 122 mm. The same floor and the same USB opening. The pack lies at the back of the floor, behind the ports (they stay at the front), with the controller standing above it. The M8 hole moves to the front bottom corner so the nut does not hit the pack.
 
 - Airflow: sideways inlet, good for rain, longer path than variant 1.
 - Heat: the pack is low and away from the ESP32, but it is still under the sensor deck.
@@ -69,9 +93,9 @@ Height 122 mm. The pack lies on the floor. Particulate air does **not** pass thr
 - Print: taller. Side holes are simple.
 - Size: 16 mm taller than variant 1.
 
-### Variant 3 — sensor pod
+### Variant 3 — original floor, pack in a cap
 
-Height 130 mm. The lower half is only sensors: SPS30 on the floor ports, SHT45 and SGP41 behind the divider, SCD30 on the vented wall. A bulkhead separates that pod from the upper bay, which holds the pack and the electronics. USB-C is just above the joint. Solar stays on the bottom, offset from the ports.
+Height 130 mm. The lower half is only the Open Air sensor group: SPS30 on the floor ports, SCD30 beside it, SGP41 at the USB wall, SHT45 on the intake. The USB opening stays at the same height. The pack and the standing controller sit above a bulkhead, clear of the airflow.
 
 - Airflow: same down-inlet as variant 1, and the exhaust path stops at the bulkhead.
 - Heat: best of the three. The cool bay is low, walled off from the SPS30 exhaust side, and the ESP32, charger, and TPS63020 are above the bulkhead.

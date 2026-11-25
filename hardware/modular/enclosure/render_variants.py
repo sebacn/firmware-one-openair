@@ -16,39 +16,34 @@ RENDERS = ROOT / "renders"
 
 # name, color, center (x,y,z), size (x,y,z)
 # Coordinates match enclosure.scad standoffs. Origin is the floor centre.
+# Shared floor matches the Open Air: SPS30 over the bottom ports, SCD30 beside
+# it, SGP41 on the USB wall, SHT45 on the intake side. Only the pack and the
+# controller move between variants.
+FLOOR = [
+    ("SPS30", "#3d8bfd", (6, 4, 12.6), (41, 41, 12)),
+    ("SCD30", "#e07a3d", (-28, 6, 10.0), (35, 23, 7)),
+    ("SGP41", "#f2c14e", (-34, -2, 28.5), (18, 25.4, 5)),
+    ("SHT45", "#2fbf71", (29, 29, 20.4), (25.3, 17.8, 4.8)),
+    ("BQ25185", "#d64550", (-34, 18, 34.0), (16, 29.2, 6)),
+]
 LAYOUTS = {
-    1: [
-        ("SPS30", "#3d8bfd", (0, 9, 13.2), (41, 41, 12)),
-        ("SHT45", "#2fbf71", (-36, 25, 31.2), (25.3, 17.8, 4.8)),
-        ("SGP41", "#f2c14e", (-24, 25, 31.2), (25.4, 17.8, 5)),
-        ("SCD30", "#e07a3d", (-8, -20, 58.3), (35, 23, 7)),
-        ("ESP32", "#6b4c9a", (-6, 17, 82.8), (58, 28, 8)),
-        ("BQ25185", "#d64550", (29, -1, 80.5), (29.2, 19.1, 6)),
-        ("TPS63020", "#4aa3a2", (30, 18, 80.5), (26, 18, 5)),
-        ("Battery", "#8d99ae", (0, -32, 42), (57, 22, 70)),
-        ("PCM", "#6b8f71", (0, -16, 8), (18, 8, 4)),
+    1: FLOOR + [
+        ("ESP32", "#6b4c9a", (28, -30, 52), (12, 26, 58)),
+        ("TPS63020", "#4aa3a2", (-2, -32, 34), (26, 18, 5)),
+        ("Battery", "#8d99ae", (0, 6, 90), (68, 36, 18)),
+        ("PCM", "#6b8f71", (36, -18, 22), (16, 12, 4)),
     ],
-    2: [
-        ("Battery", "#8d99ae", (0, -4, 13.4), (70, 57, 22)),
-        ("SPS30", "#3d8bfd", (0, 7, 42.8), (41, 41, 12)),
-        ("SHT45", "#2fbf71", (-36, 23, 59.2), (25.3, 17.8, 4.8)),
-        ("SGP41", "#f2c14e", (-24, 23, 59.2), (25.4, 17.8, 5)),
-        ("SCD30", "#e07a3d", (-6, -22, 81.5), (35, 23, 7)),
-        ("ESP32", "#6b4c9a", (-6, 18, 104.8), (58, 28, 8)),
-        ("BQ25185", "#d64550", (31, 1, 102.5), (29.2, 19.1, 6)),
-        ("TPS63020", "#4aa3a2", (30, 20, 102.5), (26, 18, 5)),
-        ("PCM", "#6b8f71", (22, 18, 28), (16, 12, 4)),
+    2: FLOOR + [
+        ("Battery", "#8d99ae", (0, -30, 16), (68, 26, 22)),
+        ("ESP32", "#6b4c9a", (26, -30, 58), (12, 26, 50)),
+        ("TPS63020", "#4aa3a2", (4, -32, 36), (26, 18, 5)),
+        ("PCM", "#6b8f71", (34, -18, 20), (16, 12, 4)),
     ],
-    3: [
-        ("SPS30", "#3d8bfd", (0, 7, 13.2), (41, 41, 12)),
-        ("SHT45", "#2fbf71", (-36, 22, 29.2), (25.3, 17.8, 4.8)),
-        ("SGP41", "#f2c14e", (-24, 22, 29.2), (25.4, 17.8, 5)),
-        ("SCD30", "#e07a3d", (-4, -24, 47.5), (35, 23, 7)),
-        ("Battery", "#8d99ae", (-6, -28, 86), (70, 22, 57)),
-        ("ESP32", "#6b4c9a", (-6, 20, 94.8), (58, 28, 8)),
-        ("BQ25185", "#d64550", (29, 3, 92.5), (29.2, 19.1, 6)),
-        ("TPS63020", "#4aa3a2", (30, 22, 92.5), (26, 18, 5)),
-        ("PCM", "#6b8f71", (32, -28, 72), (16, 12, 4)),
+    3: FLOOR + [
+        ("Battery", "#8d99ae", (0, -26, 88), (68, 28, 22)),
+        ("ESP32", "#6b4c9a", (0, 18, 96), (58, 26, 10)),
+        ("TPS63020", "#4aa3a2", (28, 18, 78), (26, 18, 5)),
+        ("PCM", "#6b8f71", (34, -26, 72), (16, 12, 4)),
     ],
 }
 
@@ -324,6 +319,46 @@ def export_glb():
         print("glb", path, path.stat().st_size)
 
 
+def original_diagram():
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.6))
+    ax = axes[0]
+    ax.set_title("Open Air, looking down into the bottom")
+    ax.set_xlim(-50, 50)
+    ax.set_ylim(-48, 48)
+    ax.set_aspect("equal")
+    ax.add_patch(plt.Rectangle((-46, -44), 92, 88, fill=False, lw=2, color="#333"))
+    ax.add_patch(plt.Rectangle((-8, -16), 41, 41, color="#3d8bfd", alpha=0.85))
+    ax.text(12, 4, "PMS5003T\ninlet down", ha="center", va="center", fontsize=8, color="white")
+    ax.add_patch(plt.Rectangle((-42, -8), 30, 20, color="#e07a3d", alpha=0.9))
+    ax.text(-27, 2, "S8 CO2", ha="center", va="center", fontsize=8)
+    ax.add_patch(plt.Rectangle((-46, -28), 14, 22, color="#f2c14e", alpha=0.95))
+    ax.text(-39, -17, "SGP41\nout", ha="center", va="center", fontsize=7)
+    ax.add_patch(plt.Rectangle((18, -40), 12, 50, color="#6b4c9a", alpha=0.9))
+    ax.text(24, -15, "PCB\nvertical", ha="center", va="center", fontsize=8, color="white")
+    ax.annotate("USB-C", xy=(-46, 8), xytext=(-20, 36), fontsize=8,
+                arrowprops=dict(arrowstyle="->", color="#d64550"))
+    ax.plot([-46], [8], "o", color="#d64550")
+    ax.set_xlabel("side wall with USB  →")
+    ax.set_yticks([])
+    ax.set_xticks([])
+    ax = axes[1]
+    ax.set_title("Open Air, side: air falls in, does not loop")
+    ax.set_xlim(0, 90)
+    ax.set_ylim(0, 90)
+    ax.add_patch(plt.Rectangle((8, 8), 70, 70, fill=False, lw=2))
+    ax.annotate("", xy=(43, 18), xytext=(43, 70),
+                arrowprops=dict(arrowstyle="->", color="#3d8bfd", lw=2))
+    ax.text(48, 50, "inlet\ndown", color="#3d8bfd", fontsize=8)
+    ax.annotate("", xy=(78, 40), xytext=(55, 22),
+                arrowprops=dict(arrowstyle="->", color="#c47b2b", lw=2))
+    ax.text(60, 36, "exhaust\nout the side", color="#c47b2b", fontsize=8)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    fig.tight_layout()
+    fig.savefig(RENDERS / "original-reference.png", dpi=130)
+    plt.close(fig)
+
+
 def main():
     RENDERS.mkdir(exist_ok=True)
     for variant in (1, 2, 3):
@@ -349,6 +384,7 @@ def main():
         section(variant)
         print("rendered", variant)
     comparison()
+    original_diagram()
     export_glb()
     print("comparison", RENDERS / "comparison.png")
 

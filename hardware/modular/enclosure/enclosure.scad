@@ -51,9 +51,9 @@ module strain(span = 14) {
 }
 
 module usb_slot() {
-    // BQ25185 USB-C, reachable on the -X wall, drip lip left in the shell.
-    h = variant == 2 ? 96 : (variant == 3 ? 70 : 34);
-    translate([-W / 2 - 2, 8, h]) cube([8, 12, 7]);
+    // Same place on every variant: low on the -X wall, where the Open Air
+    // USB-C sits in the bottom shell. 12 x 7 mm lets the BQ25185 connector out.
+    translate([-W / 2 - 2, 6, 30]) cube([8, 12, 7]);
 }
 
 // M8x1 female front-mount receptacle (IEC 61076-2-104, A-coded, 2 pin,
@@ -74,16 +74,10 @@ module solar_hole() {
 }
 
 module pm_ports() {
-    // Two 16 mm ports in the floor, under the SPS30. Inlet is the front one.
-    // Variant 2 carries the battery on that floor, so the air enters from the side.
-    if (variant == 2) {
-        for (z = [8, 16])
-            translate([W / 2 - 4, 6, z]) rotate([0, 90, 0])
-                cylinder(h = 10, d = 12, $fn = 24);
-    } else {
-        for (y = [-8, 14])
-            translate([6, y, -2]) cylinder(h = 8, d = 16, $fn = 28);
-    }
+    // Same two 16 mm floor ports on every variant, under the SPS30.
+    // The front hole is the inlet. The rear hole feeds the side exhaust.
+    for (y = [-8, 14])
+        translate([6, y, -2]) cylinder(h = 8, d = 16, $fn = 28);
 }
 
 module side_louvers(z0, n = 4) {
@@ -125,47 +119,44 @@ module shell() {
 }
 
 module standoffs() {
-    // 4.5 mm so a solder fillet and a wire leaving the pad clear the floor.
+    // 4.8 mm so a solder fillet and a wire leaving the pad clear the floor.
+    // Positions follow the Open Air: PM and CO2 low, SGP near the USB wall,
+    // controller standing where the original PCB stood.
     h = 4.8;
+    // Shared sensor floor. SPS30 over the two floor ports. SCD30 beside it.
+    for (x = [-8, 20], y = [-10, 18])
+        translate([x, y, floor_t]) boss(h);
+    for (x = [-40, -16], y = [-4, 16])
+        translate([x, y, floor_t]) boss(h);
+    // SGP41 on the USB side wall, facing out.
+    for (x = [-40, -26], y = [-8, 4])
+        translate([x, y, 22]) boss(h);
+    // SHT45 on the intake side, upstream of the SPS30, own vents.
+    for (x = [18, 40], y = [22, 36])
+        translate([x, y, 14]) boss(h);
     if (variant == 1) {
-        // SPS30, front, over the floor ports.
-        for (x = [-16, 16], y = [-4, 22])
-            translate([x, y, floor_t]) boss(h);
-        // Cool bay: SHT45 and SGP41, front-left, above the SPS30.
-        for (x = [-38, -22], y = [18, 32])
+        // Controller stands at the back. Power boards sit by the USB opening.
+        for (x = [18, 40], y = [-40, -22])
             translate([x, y, 24]) boss(h);
-        // SCD30, mid, side vents behind it.
-        for (x = [-20, 4], y = [-28, -12])
-            translate([x, y, 50]) boss(h);
-        // ESP32, BQ25185, TPS63020 on the upper shelf.
-        for (x = [-30, 18], y = [6, 28])
-            translate([x, y, 74]) boss(h);
-        for (x = [22, 36], y = [-8, 6])
-            translate([x, y, 74]) boss(3.6, 2.6);
+        for (x = [-40, -22], y = [12, 28])
+            translate([x, y, 28]) boss(3.6, 2.6);
+        for (x = [-16, 8], y = [-40, -24])
+            translate([x, y, 28]) boss(3.6, 2.6);
     } else if (variant == 2) {
-        // Battery plinth uses the floor. Sensors sit on a raised deck.
-        for (x = [-16, 16], y = [-6, 20])
-            translate([x, y, 32]) boss(h);
-        for (x = [-38, -22], y = [16, 30])
-            translate([x, y, 52]) boss(h);
-        for (x = [-18, 6], y = [-30, -14])
-            translate([x, y, 74]) boss(h);
-        for (x = [-28, 16], y = [8, 28])
-            translate([x, y, 96]) boss(h);
-        for (x = [24, 38], y = [-6, 8])
-            translate([x, y, 96]) boss(3.6, 2.6);
+        // Pack lies at the back of the floor, clear of the ports (y > -14).
+        for (x = [16, 38], y = [-40, -24])
+            translate([x, y, 30]) boss(h);
+        for (x = [-40, -22], y = [14, 28])
+            translate([x, y, 28]) boss(3.6, 2.6);
+        for (x = [-12, 10], y = [-40, -26])
+            translate([x, y, 30]) boss(3.6, 2.6);
     } else {
-        // Lower pod is only sensors. Electronics and the battery are above the bulkhead.
-        for (x = [-16, 16], y = [-6, 20])
-            translate([x, y, floor_t]) boss(h);
-        for (x = [-38, -22], y = [14, 30])
-            translate([x, y, 22]) boss(h);
-        for (x = [-16, 8], y = [-32, -16])
-            translate([x, y, 40]) boss(h);
-        for (x = [-28, 16], y = [10, 30])
-            translate([x, y, 86]) boss(h);
-        for (x = [22, 36], y = [-4, 10])
-            translate([x, y, 86]) boss(3.6, 2.6);
+        for (x = [-20, 20], y = [-40, -18])
+            translate([x, y, 62]) boss(h);
+        for (x = [-20, 16], y = [8, 28])
+            translate([x, y, 78]) boss(h);
+        for (x = [-40, -22], y = [12, 26])
+            translate([x, y, 28]) boss(3.6, 2.6);
     }
 }
 
