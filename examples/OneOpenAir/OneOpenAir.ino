@@ -49,7 +49,6 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #include "OpenMetrics.h"
 #include "AgSerialCommands.h"
 #include "WebServer.h"
-#include "esp32c3/rom/rtc.h"
 #include <HardwareSerial.h>
 #include <WebServer.h>
 #include <WiFi.h>
@@ -67,6 +66,13 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #include "Libraries/airgradient-ota/src/airgradientOtaCellular.h"
 #include "esp_system.h"
 #include "freertos/projdefs.h"
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+#include "esp32c3/rom/rtc.h"
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+#include "esp32s3/rom/rtc.h"
+#elif defined(CONFIG_IDF_TARGET_ESP32)
+#include "esp32/rom/rtc.h"
+#endif
 
 #define LED_BAR_ANIMATION_PERIOD 100                       /** ms */
 #define DISP_UPDATE_INTERVAL 2500                          /** ms */
@@ -92,10 +98,43 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #define MAXIMUM_MEASUREMENT_CYCLE_QUEUE 80
 #define MEASUREMENT_LOCK_TIMEOUT (3 * 60000) /** ms — cap loop() stall when a post holds the queue lock */
 
-/** I2C define */
+/**
+ * I2C pins. The ESP32-C3 Open Air board uses GPIO7/GPIO6.
+ * Modular envs in platformio.ini pass -D I2C_SDA_PIN / I2C_SCL_PIN
+ * matching hardware/modular (rev A). Command-line -D wins over these defaults.
+ */
+#ifndef I2C_SDA_PIN
 #define I2C_SDA_PIN 7
+#endif
+#ifndef I2C_SCL_PIN
 #define I2C_SCL_PIN 6
+#endif
 #define OLED_I2C_ADDR 0x3C
+
+/**
+ * Modular harness only (see hardware/modular rev A).
+ * SPS30_5V_EN_PIN: active-high enable for the 5 V boost that feeds the SPS30.
+ * VBAT_ADC_PIN: ADC1 input after the 100k/100k divider.
+ * VBAT_DIVIDER_NUM/DEN: pack voltage = pin voltage * NUM / DEN.
+ */
+#ifndef VBAT_DIVIDER_NUM
+#define VBAT_DIVIDER_NUM 2
+#endif
+#ifndef VBAT_DIVIDER_DEN
+#define VBAT_DIVIDER_DEN 1
+#endif
+
+/**
+ * Open Air ESP32-C3 uses USB CDC as Serial and the sensor UART as Serial0.
+ * Classic ESP32 and ESP32-S3 builds have no Serial0 object. Point the same
+ * probe at Serial2 (ESP32 RX/TX GPIO16/17, ESP32-S3 RX/TX GPIO19/20) so the
+ * console UART is left alone. Nothing on the modular harness is wired there.
+ */
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+#define AG_UART0 Serial0
+#else
+#define AG_UART0 Serial2
+#endif
 
 /** Power pin */
 #define GPIO_POWER_MODULE_PIN 5
@@ -205,6 +244,19 @@ void setup() {
   mainTaskHandle = xTaskGetCurrentTaskHandle();
   hardwareIdentity.begin();
 
+#ifdef SPS30_5V_EN_PIN
+  // 5 V boost enable is active high (Adafruit 6106 / TPS61023). High keeps the
+  // SPS30 powered. The rail is I2C-wired on the modular sheet; this firmware
+  // still probes SPS30 on UART.
+  pinMode(SPS30_5V_EN_PIN, OUTPUT);
+  digitalWrite(SPS30_5V_EN_PIN, HIGH);
+#endif
+#ifdef VBAT_ADC_PIN
+  pinMode(VBAT_ADC_PIN, INPUT);
+  analogReadResolution(12);
+  analogSetPinAttenuation(VBAT_ADC_PIN, ADC_11db);
+#endif
+
   // Enable cullular module power board
   pinMode(GPIO_EXPANSION_CARD_POWER, OUTPUT);
   digitalWrite(GPIO_EXPANSION_CARD_POWER, HIGH);
@@ -219,6 +271,14 @@ void setup() {
 
   /** Init I2C */
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+#ifdef I2C_CLOCK_HZ
+  // SPS30 I2C maximum is 100 kHz. SCD30 also maxes at 100 kHz and can stretch
+  // the clock (typically 30 ms, up to 150 ms). Keep the bus at I2C_CLOCK_HZ.
+  Wire.setClock(I2C_CLOCK_HZ);
+#endif
+#ifdef WIRE_TIMEOUT_MS
+  Wire.setTimeOut(WIRE_TIMEOUT_MS);
+#endif
   delay(1000);
 
   /** Detect board type from eFuse, OLED, or persisted model. */
@@ -307,10 +367,15 @@ void setup() {
     BaseType_t xReturned =
         xTaskCreate(serialCommandTask, "SerialCommandTask", 8192, nullptr, 5, &handleSerialTask);
     if (xReturned == pdPASS) {
+#if defined(ARDUINO_USB_CDC_ON_BOOT) && ARDUINO_USB_CDC_ON_BOOT
       Serial.onEvent(ARDUINO_HW_CDC_RX_EVENT,
                      [](void *arg, esp_event_base_t eventBase, int32_t eventId, void *eventData) {
                        xTaskNotifyGive(handleSerialTask);
                      });
+#else
+      // UART console (ESP32, ESP32-S3 DevKitC). onReceive runs from the UART event task.
+      Serial.onReceive([]() { xTaskNotifyGive(handleSerialTask); });
+#endif
       // Process any bytes received before the callback was registered.
       xTaskNotifyGive(handleSerialTask);
     } else {
@@ -587,7 +652,15 @@ static void fanControllerUpdate(void) {
   }
 }
 
-void printMeasurements() { measurements.printCurrentAverage(); }
+void printMeasurements() {
+  measurements.printCurrentAverage();
+#ifdef VBAT_ADC_PIN
+  const int pinMv = analogReadMilliVolts(VBAT_ADC_PIN);
+  const int packMv = pinMv * VBAT_DIVIDER_NUM / VBAT_DIVIDER_DEN;
+  Serial.printf("VBAT ADC GPIO%d: pin %d mV, pack ~ %d mV (divider %d/%d)\n",
+                VBAT_ADC_PIN, pinMv, packMv, VBAT_DIVIDER_NUM, VBAT_DIVIDER_DEN);
+#endif
+}
 
 static void mdnsInit(void) {
   if (!MDNS.begin(localServer.getHostname().c_str())) {
@@ -1014,12 +1087,12 @@ static void oneIndoorInit(void) {
   }
 
   /** Init PMS5003, fallback to SPS30 if not found */
-  if (ag->pms5003.begin(Serial0) == false) {
+  if (ag->pms5003.begin(AG_UART0) == false) {
     Serial.println("PMS5003 not found, trying SPS30...");
     configuration.hasSensorPMS1 = false;
 
-    if (ag->sps30_1.begin(Serial0)) {
-      Serial.println("SPS30 detected on Serial0");
+    if (ag->sps30_1.begin(AG_UART0)) {
+      Serial.println("SPS30 detected on AG_UART0");
       configuration.hasSensorSPS30_1 = true;
     } else {
       Serial.println("SPS30 not found either");
@@ -1039,7 +1112,7 @@ static void openAirInit(void) {
 
   /** detect sensor: PMS5003, PMS5003T, SGP41 and S8 */
   /**
-   * Serial1 and Serial0 is use for connect S8 and PM sensor or both PM
+   * Serial1 and AG_UART0 is use for connect S8 and PM sensor or both PM
    */
   bool serial1Available = true;
   bool serial0Available = true;
@@ -1047,9 +1120,9 @@ static void openAirInit(void) {
   if (ag->s8.begin(Serial1) == false) {
     Serial1.end();
     delay(200);
-    Serial.println("Can not detect S8 on Serial1, try on Serial0");
+    Serial.println("Can not detect S8 on Serial1, try on AG_UART0");
     /** Check on other port */
-    if (ag->s8.begin(Serial0) == false) {
+    if (ag->s8.begin(AG_UART0) == false) {
       configuration.hasSensorS8 = false;
 
       Serial.println("CO2 S8 sensor not found");
@@ -1057,7 +1130,7 @@ static void openAirInit(void) {
       fwMode = FW_MODE_O_1PPT;
       delay(200);
     } else {
-      Serial.println("Found S8 on Serial0");
+      Serial.println("Found S8 on AG_UART0");
       serial0Available = false;
     }
   } else {
@@ -1081,7 +1154,7 @@ static void openAirInit(void) {
    * Attempt to detect PM sensors on available serial ports.
    * Per-port order: PMS5003T first (@9600), fallback to SPS30 (@115200).
    * For single-PM modes the detected sensor is always assigned to channel 1.
-   * For dual-PM modes Serial0 → channel 1, Serial1 → channel 2.
+   * For dual-PM modes AG_UART0 → channel 1, Serial1 → channel 2.
    */
   auto detectPmOnSerial = [](HardwareSerial &serial, PMS5003T &pms, SPS30 &sps,
                              const char *portName) -> int {
@@ -1100,14 +1173,14 @@ static void openAirInit(void) {
   };
 
   if (fwMode == FW_MODE_O_1PST || fwMode == FW_MODE_O_1PS) {
-    // Single PM channel expected — try Serial0 first, fallback Serial1
+    // Single PM channel expected — try AG_UART0 first, fallback Serial1
     configuration.hasSensorPMS1 = false;
     configuration.hasSensorPMS2 = false;
     bool pmFound = false;
 
     if (serial0Available) {
       int result =
-          detectPmOnSerial(Serial0, ag->pms5003t_1, ag->sps30_1, "Serial0");
+          detectPmOnSerial(AG_UART0, ag->pms5003t_1, ag->sps30_1, "AG_UART0");
       if (result == 1) {
         configuration.hasSensorPMS1 = true;
         serial0Available = false;
@@ -1130,13 +1203,13 @@ static void openAirInit(void) {
       }
     }
   } else {
-    // Dual PM channel modes (O_1PPT / O_1PP) — Serial0 → ch1, Serial1 → ch2
+    // Dual PM channel modes (O_1PPT / O_1PP) — AG_UART0 → ch1, Serial1 → ch2
     configuration.hasSensorPMS1 = false;
     configuration.hasSensorPMS2 = false;
 
-    // Channel 1 on Serial0
+    // Channel 1 on AG_UART0
     int result1 =
-        detectPmOnSerial(Serial0, ag->pms5003t_1, ag->sps30_1, "Serial0");
+        detectPmOnSerial(AG_UART0, ag->pms5003t_1, ag->sps30_1, "AG_UART0");
     if (result1 == 1) {
       configuration.hasSensorPMS1 = true;
     } else if (result1 == 2) {

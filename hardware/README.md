@@ -35,6 +35,7 @@ Schematic and PCB stay in one directory per board. KiCad resolves symbols, footp
 | `open-air/sgp41-module/` | SGP41 TVOC/NOx module, KiCad sources plus the released Gerbers and BOM |
 | `open-air/co2-module/` | SenseAir S8 / Sunlight CO2 carrier, KiCad project `CO2-sensor-pcb` plus Gerbers and BOM |
 | `open-air/enclosure/` | 3D-printable enclosure STLs |
+| `modular/` | DIY outdoor monitor wired from off-the-shelf modules (two KiCad schematics, no PCB). Not an AirGradient board. See [`modular/README.md`](modular/README.md). |
 
 Open a project by loading its `.kicad_pro` (or the `.kicad_pcb` / `.kicad_sch` next to it) in KiCad. The main board and CO2 carrier are KiCad 7 files (`kicad_pcb` version 20221018, schematic version 20230121). The SGP41 module is an older KiCad 6 project (`kicad_pcb` version 20211014) whose schematic and board were saved as two project names in the same folder (`sgp41-tvoc-sensor-module` and `tvoc-sensor-module`). That split is how AirGradient published the archive.
 
