@@ -1,0 +1,8 @@
+# KiCad regenerates these locally. They were not part of the published design.
+fp-info-cache
+*-backups/
+_autosave*
+~*.lck
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*.kicad_pro-bak

@@ -1,0 +1,5 @@
+(sym_lib_table
+  (lib (name "SGP30")(type "Legacy")(uri "${KIPRJMOD}/libs/SGP30/SGP30.lib")(options "")(descr ""))
+  (lib (name "2N7002DW")(type "Legacy")(uri "${KIPRJMOD}/libs/2N7002DW/2N7002DW.lib")(options "")(descr ""))
+  (lib (name "SGP4x")(type "KiCad")(uri "${KIPRJMOD}/libs/SGP4X/SGP4x.kicad_sym")(options "")(descr ""))
+)

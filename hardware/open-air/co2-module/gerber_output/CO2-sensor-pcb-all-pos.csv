@@ -1,0 +1,5 @@
+Designator,Val,Package,Mid X,Mid Y,Rotation,Layer
+C1,10uf / 25V,C_0603_1608Metric,83.058,-51.308,90,top
+C2,10uf / 25V,C_0603_1608Metric,80.01,-51.308,90,top
+U1,HT7333-3-SOT89,SOT-89-3,81.534,-56.134,90,top
+con1,Conn_01x08_MountingPin,Molex_PicoBlade_53261-0871_1x08-1MP_P1.25mm_Horizontal,89.4,-51.749,-90,top

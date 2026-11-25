@@ -1,0 +1,14 @@
+# Keep fabrication and mechanical binaries untouched by line-ending conversion.
+*.step binary
+*.STEP binary
+*.stp binary
+*.STP binary
+*.stl binary
+*.STL binary
+*.wrl binary
+*.WRL binary
+*.xls binary
+*.zip binary
+*.jpg binary
+*.jpeg binary
+*.png binary
