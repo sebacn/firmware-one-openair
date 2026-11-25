@@ -321,3 +321,7 @@ A build on 2026-11-25. Variant A is the LOLIN32 V1.0.0 (`lolin32`). `modular-esp
 Those modular numbers are with `AG_MODULAR_I2C` (SCD30/SCD41 auto-detect and SPS30 over I2C). The three variant A rows use the same flags on board `lolin32`. The C3 image is the same size as before this pin change.
 
 The S3 image was linked against the `qio_opi` SDK libraries and `esptool` was invoked with `--flash_size 16MB`. The app partition is still the 4 MB Open Air slot (`0x1E0000` bytes), which is why the flash percentage is against 1.9 MB rather than 16 MB.
+
+## Enclosure
+
+Three shell variants for these modules, with soldered wiring and no board sockets, are in [`enclosure/`](enclosure/README.md). The comparison sheet is [`enclosure/renders/comparison.png`](enclosure/renders/comparison.png).
