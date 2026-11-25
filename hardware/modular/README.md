@@ -25,7 +25,7 @@ Selecting an environment does three things in `examples/OneOpenAir/OneOpenAir.in
 - `SPS30_5V_EN_PIN` is driven high at startup so the 5 V boost stays on. Drive it low later to remove power from the SPS30.
 - `VBAT_ADC_PIN` is read with 11 dB attenuation. The log line multiplies the pin voltage by 2 for the 100 kΩ / 100 kΩ divider.
 
-It does **not** switch the SPS30 driver to I2C, and it does **not** auto-detect SCD30 versus SCD41. Those stay future firmware work. The sheet is drawn for I2C anyway: SPS30 `SEL` is tied to GND, and either CO2 module can be fitted. Until that firmware exists, the sketch still probes SPS30 and the SenseAir S8 on a UART (`Serial0` on the ESP32-C3, `Serial2` on these two boards). Leave the `Serial2` pins unconnected.
+On these two environments the sketch probes I2C for a CO2 sensor and reads the SPS30 at 0x69. The ESP32-C3 build does not. Details are in the startup log: SCD30 at 0x61 (continuous, 2 s, ASC on), SCD41 at 0x62 (periodic, ASC on), or neither. If both answer, SCD41 is used and SCD30 is left idle. SHT stays the temperature source; CO2-sensor T/RH is used only when no SHT answers. `SPS30_ALWAYS_ON=1` (the default) leaves the 5 V boost on. Set it to 0 to drop the boost between readings; each cycle then waits `SPS30_STARTUP_MS` (8000, the datasheet's stable-sample time). The inherited UART probe still exists for the C3 board. On these MCUs that probe is `Serial2` and nothing on the harness should be wired to it.
 
 | Board | `Serial2` default pins (Arduino-ESP32 2.0.17) | Leave unconnected |
 | --- | --- | --- |
@@ -293,9 +293,11 @@ A build on 2026-11-25, after `git submodule update --init --recursive`. Variant 
 
 | Environment | Result | RAM | Flash |
 | --- | --- | --- | --- |
-| `modular-lolin32-lite` | success | 79516 / 327680 bytes (24.3%) | 1809929 / 1966080 bytes (92.1%) |
-| `modular-esp32-d1mini` | success | 79516 / 327680 bytes (24.3%) | 1809929 / 1966080 bytes (92.1%) |
-| `modular-esp32s3-n16r8` | success | 74920 / 327680 bytes (22.9% of internal SRAM; the 8 MB PSRAM is not in this number) | 1700597 / 1966080 bytes (86.5%) |
+| `modular-lolin32-lite` | success | 78540 / 327680 bytes (24.0%) | 1793489 / 1966080 bytes (91.2%) |
+| `modular-esp32-d1mini` | success | 78540 / 327680 bytes (24.0%) | 1793489 / 1966080 bytes (91.2%) |
+| `modular-esp32s3-n16r8` | success | 73960 / 327680 bytes (22.6% of internal SRAM; the 8 MB PSRAM is not in this number) | 1684061 / 1966080 bytes (85.7%) |
 | `esp32-c3` (unchanged environment, rebuilt as a check) | success | 68844 / 327680 bytes (21.0%) | 1781418 / 1966080 bytes (90.6%) |
+
+Those modular numbers are with `AG_MODULAR_I2C` (SCD30/SCD41 auto-detect and SPS30 over I2C). The C3 image is the same size as before that flag.
 
 The S3 image was linked against the `qio_opi` SDK libraries and `esptool` was invoked with `--flash_size 16MB`. The app partition is still the 4 MB Open Air slot (`0x1E0000` bytes), which is why the flash percentage is against 1.9 MB rather than 16 MB.
