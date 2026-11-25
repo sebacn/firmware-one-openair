@@ -46,7 +46,7 @@ AliExpress listing pages did not return usable HTML to this environment (they bl
 | SCD30 module | CO2, plus its own T/RH. Fit this **or** the SCD41. 35 × 23 × 7 mm. Header VDD, GND, TX/SCL, RX/SDA, RDY, PWM, SEL. | I2C. `SEL` open or to GND. | 0x61 | 3.3 V (datasheet range 3.3–5.5 V; do not use 5 V here) | Sensirion SCD30 datasheet. Listing [1005012719322072](https://pl.aliexpress.com/item/1005012719322072.html). |
 | SCD41 module | CO2. Fit this **or** the SCD30. Header, label side, left to right: GND, VCC, SCL, SDA. Board 13.4 × 21.6 mm. | I2C | 0x62 | 3.3 V (sensor 2.4–5.5 V, peak about 205 mA at 3.3 V) | Sensirion SCD4x datasheet and the module photo below. Listing [1005009897956849](https://pl.aliexpress.com/item/1005009897956849.html). |
 | SHT45 module | Temperature / humidity. 25.3 × 17.8 × 4.8 mm. Header VIN, 3Vo, GND, SCL, SDA. Feed VIN from 3.3 V. 3Vo open. | I2C | 0x44 fixed | 3.3 V into VIN (seller allows 3.3–5 V; keep I2C at 3.3 V) | Seller card on `images/sht45.png` (marking MRS199A) and Sensirion SHT4x datasheet. Listing [1005012546290193](https://pl.aliexpress.com/item/1005012546290193.html). |
-| SPS30 | Particulate matter. I2C mode. | I2C, `SEL` to GND before power-up | 0x69 | 5 V ±10% on VDD. Logic is 3.3 V (VIH min 2.31 V). Max 100 kHz. | Sensirion SPS30 datasheet v2.0 (June 2023). Listing [1005009874188645](https://pl.aliexpress.com/item/1005009874188645.html). |
+| SPS30 | Particulate matter. I2C mode. 41 × 41 × 12 mm (L × W × H). Header: VDD (5 V), SDA, SCL, SEL to GND, GND. | I2C, `SEL` to GND before power-up | 0x69 | 5 V ±10% on VDD. Logic is 3.3 V (VIH min 2.31 V). Max 100 kHz. | Photo `images/sps30.png` and Sensirion SPS30 datasheet v2.0 (June 2023). Listing [1005009874188645](https://pl.aliexpress.com/item/1005009874188645.html). |
 | BQ25185 + 5 V boost | USB-C / solar charger and 5 V boost. Outline 29.21 × 19.05 mm. Header left to right: VIN, VU, D−, D+, G, BAT, 5V, EN. | Power. `EN` is active high. | — | Solar/DC on VIN, 3.6–18 V (abs. max 25 V, OVP about 18.5 V). Pack is 1S. Boost output 5 V. | Eagle outline of Adafruit 6106 and the photo `images/bq25185-5v-boost.png`. Listing [1005008650602873](https://pl.aliexpress.com/item/1005008650602873.html). |
 | TPS63020 module | 3.3 V buck-boost, 26 × 18 mm. Left GND, VIN. Right GND, OUT. Bottom PS, EN, and 3V3/4V2/5V select pads. | Power. EN high (tied to VIN). PS low. | — | Input from VBAT. Bridge the 3V3 pad. TI input range 1.8–5.5 V. | Photo `images/tps63020.png` and TI TPS63020 datasheet SLVS916I. Listing [1005001949409346](https://pl.aliexpress.com/item/1005001949409346.html). |
 | 1S pack | 2 or 3 18650 cells in parallel, one 1S protection circuit | Battery | — | 3.0–4.2 V | — |
@@ -102,10 +102,11 @@ The AliExpress links are the purchase links from the original module list. The p
 
 ### SPS30
 
-- Sensor: [Sensirion SPS30](https://sensirion.com/products/catalog/SPS30). Photo: [webp](https://sensirion.com/media/portfolio/series/image/4df6fc7a-b697-493b-aa0f-f203ba562e11.webp).
+- This module: [`images/sps30.png`](images/sps30.png). 41 × 41 × 12 mm (L × W × H). Five-pin header: **VDD (5 V), SDA, SCL, SEL (tie to GND for I2C), GND**.
+- Sensor: [Sensirion SPS30](https://sensirion.com/products/catalog/SPS30).
 - Purchase: [AliExpress 1005009874188645](https://pl.aliexpress.com/item/1005009874188645.html).
 
-![SPS30 on sensirion.com](https://sensirion.com/media/portfolio/series/image/4df6fc7a-b697-493b-aa0f-f203ba562e11.webp)
+![SPS30 module](images/sps30.png)
 
 ### BQ25185 charger with 5 V boost
 
