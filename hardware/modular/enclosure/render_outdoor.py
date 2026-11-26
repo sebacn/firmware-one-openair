@@ -293,29 +293,8 @@ def size_comparison():
 
 
 def original_glb():
-    ref = ROOT / "reference-outdoor"
-    names = [
-        "AirGradient Outdoor DIY Bottom Part B.stl",
-        "AirGradient Outdoor DIY Bottom Part A.stl",
-        "AirGradient Outdoor DIY Top Part C.stl",
-    ]
-    colors = ["#c5ccd3", "#9aa3ad", "#d9dde3"]
-    labels = ["Base", "Grill", "Cover"]
-    scene = trimesh.Scene()
-    z = 0
-    for fname, color, label in zip(names, colors, labels):
-        mesh = trimesh.load(ref / fname, force="mesh")
-        mesh.apply_translation(-mesh.bounds.mean(axis=0))
-        mesh.apply_translation([0, 0, z - mesh.bounds[0, 2]])
-        # Overlap the cover onto the ring by about 24 mm so the stack is ~85 mm.
-        if label == "Cover":
-            mesh.apply_translation([0, 0, -24])
-        paint(mesh, color, 255 if label != "Cover" else 110)
-        scene.add_geometry(mesh, node_name=label, geom_name=label)
-        z = mesh.bounds[1, 2]
-    path = ROOT / "assembly" / "original.glb"
-    scene.export(path)
-    print("original", path.stat().st_size)
+    from render_original_assembly import export_glb
+    export_glb()
 
 
 if __name__ == "__main__":

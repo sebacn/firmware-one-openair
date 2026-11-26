@@ -8,4 +8,4 @@ These three STLs are the files in [diy_outdoor_3d.zip](https://www.airgradient.c
 | Bottom Part B | 83.0 × 82.9 × 26.7 | Open ring. The middle is clear so air reaches the particle sensor. |
 | Bottom Part A | 71.5 × 71.2 × 11.5 | Round grill that sits in that opening. Inlet faces down. |
 
-Stacked, they match the published Open Air size of 91.5 × 86.7 × 85 mm. The PCB and the PMS5003T go in the bottom, the board standing, the particle sensor over the grill, the CO2 module beside it, and the SGP41 toward the USB opening. The top then slides on.
+Stacked, they match the published Open Air size of 91.5 × 86.7 × 85 mm. The full kit in those shells — PCB, ESP32-C3, USB-C, SGP41, SenseAir S8 and PMS5003T — is `../assembly/original.glb`. Which of those positions come from the KiCad files, and which are estimated, is in the enclosure README.

@@ -47,6 +47,29 @@ Keep the SPS30 inlet and outlet leads out of the cool bay. Run them in the exhau
 
 The shell hole is **Ø8.2 mm**, which lets the M8×1 thread through a 2.4 mm floor. Above the hole, inside the box, a **Ø14 mm × 12 mm** keep-out clears the nut (about 11 mm across the flats) and the solder cups. Tie the two soldered leads before they leave that pocket. The hole is on the bottom, offset from the particulate ports (front corner on variant 2, so it misses the battery).
 
+## Original Open Air assembly
+
+`assembly/original.glb` is the O-1PST kit inside the three DIY shells, one mesh per part. The shells are the AirGradient STLs. The components are boxes at the datasheet and KiCad sizes. Renders: `renders/original-exploded.png`, `renders/original-assembly-front.png`, `renders/original-assembly-side.png`, `renders/original-assembly-top.png`, `renders/original-assembly-section.png`, and `renders/original-assembly-legend.png`.
+
+The kit on the [builds overview](https://www.airgradient.com/documentation/kb/kb-diy-the-airgradient-builds-overview) (O-1PST row, STL link `diy_outdoor_3d.zip`) and the [PCB 1.3 assembly instructions](https://www.airgradient.com/documentation/kb/kb-old-instructions-the-airgradient-open-air-outdoor-air-quality-monitor-o-1pst-kit-pcb-version-1.3) is:
+
+| Part | Size used | Source | In this model |
+| --- | --- | --- | --- |
+| Grill, base ring, cover | measured STL bounds | `diy_outdoor_3d.zip`, CC BY-SA 4.0 | The meshes themselves |
+| Open Air PCB | 57.03 × 43.96 × 1.6 mm | Edge cuts on `hardware/open-air/main-board/ag_outdoor.kicad_pcb` | Standing, USB edge toward the cover's −X bulge |
+| ESP32-C3-MINI-1 | 16.6 × 13.2 × 2.4 mm | Espressif module drawing. KiCad places U2 at (124, 83.4) | On the PCB face, at that footprint |
+| USB-C | 9.0 × 7.5 × 3.2 mm body | GCT USB4105, the footprint on the board. KiCad USB1 at (168, 67.37), on the short edge | On that edge, mouth toward −X |
+| SGP41 module | 10.0 × 12.0 mm outline, 4.5 mm thick | Edge cuts on `hardware/open-air/sgp41-module/`. Socket I2C1 at (165.74, 101.53) | Plugged on that socket, sticking out past the USB edge. Thickness is a guess |
+| CO2 carrier | 54 × 32 × 1.6 mm | Edge cuts on `hardware/open-air/co2-module/` | On the PCB, above the particle sensor |
+| SenseAir S8 | 33.5 × 20 × 8.5 mm | SenseAir S8 product specification | On the carrier. The two Ø2.5 mm holes are on the carrier, 33 mm apart |
+| PMS5003T | 50 × 38 × 21 mm | Plantower PMS5003T manual | Flat on the grill. Which end is the inlet is a guess |
+
+There is no separate SHT. The O-1PST reads temperature and humidity inside the PMS5003T. The SHT4x module on the builds page is for the indoor ONE and the Open Air Max, not this monitor. The older ESP8266 outdoor page mentions an SHT in one photo caption, but its parts table does not list one, and these STLs are the files linked from the O-1PST row.
+
+Verified from the files: the three shell sizes and the −X bulge, the PCB outline, and where USB1, U2, I2C1, PM1 and PM2 sit on that board. The S8 and SGP41 outlines. The PMS5003T and S8 outer sizes.
+
+Estimated, because AirGradient has not published a STEP assembly: the board's yaw in the shell (USB edge toward the bulge, USB end of that edge downward, because the instructions put the LED on the bottom part), the height of the S8 on the board, and the PMS5003T's place on the grill. The V1.3 PCB has no holes for the S8 screws. The instructions still say to screw the module on with two M1.8×11 screws and washers, so those screws are drawn as landing on the carrier, not through the main board.
+
 ## Original reference
 
 The production Open Air (O-1PST) is 91.5 × 86.7 × 85 mm in ASA ([spec sheet](https://www.airgradient.com/documents/spec-sheets/Spec_Sheet_AirGradient_Open_Air_O-1PST.pdf)). The [assembly instructions](https://www.airgradient.com/documentation/kb/kb-old-instructions-the-airgradient-open-air-outdoor-air-quality-monitor-o-1pst-kit-pcb-version-1.3) put the parts in the bottom shell and slide the top over a vertical PCB:
