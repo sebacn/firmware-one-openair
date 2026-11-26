@@ -49,35 +49,31 @@ The shell hole is **Ø8.2 mm**, which lets the M8×1 thread through a 2.4 mm flo
 
 ## Original Open Air assembly
 
-`assembly/original.glb` is the O-1PST kit inside the three DIY shells, one mesh per part. The shells are the AirGradient STLs. The components are boxes at the datasheet and KiCad sizes. Renders: `renders/original-exploded.png`, `renders/original-assembly-front.png`, `renders/original-assembly-side.png`, `renders/original-assembly-top.png`, `renders/original-assembly-section.png`, and `renders/original-assembly-legend.png`.
+`assembly/original.glb` is the O-1PST kit inside the three DIY shells. Placement follows the photos on the [PCB 1.3 assembly instructions](https://www.airgradient.com/documentation/kb/kb-old-instructions-the-airgradient-open-air-outdoor-air-quality-monitor-o-1pst-kit-pcb-version-1.3) (CC BY-SA 4.0). The shells are the STLs from `diy_outdoor_3d.zip`. Component boxes use the KiCad outlines and the Plantower and SenseAir drawings. Renders: `renders/original-exploded.png`, `renders/original-assembly-front.png`, `renders/original-assembly-side.png`, `renders/original-assembly-top.png`, `renders/original-assembly-section.png`, `renders/original-assembly-legend.png`. The photo comparison is `renders/original-vs-instructions.png`.
 
-The kit on the [builds overview](https://www.airgradient.com/documentation/kb/kb-diy-the-airgradient-builds-overview) (O-1PST row, STL link `diy_outdoor_3d.zip`) and the [PCB 1.3 assembly instructions](https://www.airgradient.com/documentation/kb/kb-old-instructions-the-airgradient-open-air-outdoor-air-quality-monitor-o-1pst-kit-pcb-version-1.3) is:
+There is no separate SHT. Temperature and humidity are read inside the PMS5003T.
 
-| Part | Size used | Source | In this model |
-| --- | --- | --- | --- |
-| Grill, base ring, cover | measured STL bounds | `diy_outdoor_3d.zip`, CC BY-SA 4.0 | The meshes themselves |
-| Open Air PCB | 57.03 × 43.96 × 1.6 mm | Edge cuts on `hardware/open-air/main-board/ag_outdoor.kicad_pcb` | Standing, USB edge toward the cover's −X bulge |
-| ESP32-C3-MINI-1 | 16.6 × 13.2 × 2.4 mm | Espressif module drawing. KiCad places U2 at (124, 83.4) | On the PCB face, at that footprint |
-| USB-C | 9.0 × 7.5 × 3.2 mm body | GCT USB4105, the footprint on the board. KiCad USB1 at (168, 67.37), on the short edge | On that edge, mouth toward −X |
-| SGP41 module | 10.0 × 12.0 mm outline, 4.5 mm thick | Edge cuts on `hardware/open-air/sgp41-module/`. Socket I2C1 at (165.74, 101.53) | Plugged on that socket, sticking out past the USB edge. Thickness is a guess |
-| CO2 carrier | 54 × 32 × 1.6 mm | Edge cuts on `hardware/open-air/co2-module/` | On the PCB, above the particle sensor |
-| SenseAir S8 | 33.5 × 20 × 8.5 mm | SenseAir S8 product specification | On the carrier. The two Ø2.5 mm holes are on the carrier, 33 mm apart |
-| PMS5003T | 50 × 38 × 21 mm | Plantower PMS5003T manual | Flat on the grill. Which end is the inlet is a guess |
+| What the photo shows | Step | Where it went in the model |
+| --- | --- | --- |
+| White cover up, blue grill down, USB-C plugged into the blue end beside the LED hole and the button slot | Closed unit, photo `unnamed-9` | Grill at the bottom (z = 0), cover sleeved on from above. USB, LED and button are on the bottom edge of the board |
+| SGP41 plugged into the socket on the same edge as the USB, facing out, with the button and LED between it and the USB | Step 1, photo `unnamed-2`, and the bare board in step 4's wiring photo `unnamed-5` | Socket I2C1. The module sticks out past that edge. Thickness 4.5 mm is still a guess; the 10 × 12 mm outline is the KiCad edge |
+| SenseAir carrier lying flat in the blue tray, silver S8 on top, two screws into the tray | Step 2, photo `unnamed-3` | Carrier on the floor to the right of the board. The two screws are on the carrier. The main PCB has no holes for them |
+| PMS5003T cable on the end that also has the small port. Label side is the top face | Step 3, photo `unnamed-4` | Flat behind the board, label up, that cable end toward the board. Inlet end is the far end. That end-to-end reading is from the loose sensor photo, not from an arrow in the tray |
+| Board standing in the middle of the tray, PM flat behind it, S8 still on the floor to the right, USB at the bottom edge | Step 4, photo `unnamed-6` | Board plane is vertical, 57 mm tall, 44 mm across, USB edge down. ESP32-C3 is on the upper half, at U2 |
+| Four long screws close the case after the cover slides on. The photo is soap on a screw, not the bosses | Step 7, photo `unnamed-10`, and the four towers in `unnamed-3` and `unnamed-6` | Not modeled as STL bosses. The DIY ring does not have those four towers. The molded case in the photos does |
 
-There is no separate SHT. The O-1PST reads temperature and humidity inside the PMS5003T. The SHT4x module on the builds page is for the indoor ONE and the Open Air Max, not this monitor. The older ESP8266 outdoor page mentions an SHT in one photo caption, but its parts table does not list one, and these STLs are the files linked from the O-1PST row.
+The DIY STLs are not the injection-molded shell in the photos. The ring is round and open, with a separate grill, and the cover's only asymmetry is a bulge on −X. A ray sample of that bulge did not find a rectangular USB cutout. The USB is still aimed at the bottom edge, as in the photos. The round ring is tighter than the square molded tray, so the PM and the CO2 carrier meet the wall.
 
-Verified from the files: the three shell sizes and the −X bulge, the PCB outline, and where USB1, U2, I2C1, PM1 and PM2 sit on that board. The S8 and SGP41 outlines. The PMS5003T and S8 outer sizes.
-
-Estimated, because AirGradient has not published a STEP assembly: the board's yaw in the shell (USB edge toward the bulge, USB end of that edge downward, because the instructions put the LED on the bottom part), the height of the S8 on the board, and the PMS5003T's place on the grill. The V1.3 PCB has no holes for the S8 screws. The instructions still say to screw the module on with two M1.8×11 screws and washers, so those screws are drawn as landing on the carrier, not through the main board.
+Sizes that are measured, not guessed: PCB 57.03 × 43.96 × 1.6 mm from the edge cuts; ESP32-C3-MINI-1 16.6 × 13.2 × 2.4 mm; SGP41 outline 10 × 12 mm; CO2 carrier 54 × 32 mm; SenseAir S8 33.5 × 20 × 8.5 mm; PMS5003T 50 × 38 × 21 mm.
 
 ## Original reference
 
 The production Open Air (O-1PST) is 91.5 × 86.7 × 85 mm in ASA ([spec sheet](https://www.airgradient.com/documents/spec-sheets/Spec_Sheet_AirGradient_Open_Air_O-1PST.pdf)). The [assembly instructions](https://www.airgradient.com/documentation/kb/kb-old-instructions-the-airgradient-open-air-outdoor-air-quality-monitor-o-1pst-kit-pcb-version-1.3) put the parts in the bottom shell and slide the top over a vertical PCB:
 
-- The Plantower PMS5003T lies in the bottom, over the downward vent. Air must enter from below and leave by a separate path so it does not loop. Temperature and humidity in that product are read inside the PMS5003T, not in free air.
-- The SenseAir S8 is screwed beside the particle sensor.
-- The SGP41 is on the PCB, facing outward, next to the USB-C receptacle.
-- The PCB (about 57 × 44 mm on `hardware/open-air/main-board/ag_outdoor.kicad_pcb`, USB1 on the short edge) stands upright. The status LED is visible on the bottom part.
+- The Plantower PMS5003T lies flat in the bottom, behind the upright board, label up, over the grill. Temperature and humidity in that product are read inside the PMS5003T, not in free air.
+- The SenseAir S8 carrier is screwed flat to the floor of the bottom shell, to the side of the board.
+- The SGP41 is on the PCB's bottom edge, the same edge as the USB-C, facing outward.
+- The PCB stands in the middle. Its short edge, with the USB-C, LED and button, is the bottom edge. The LED shows on the bottom part.
 - The top shell measured here is 91.5 × 85.0 × 81.9 mm. Bottom part B is the open ring (83 × 83 × 27 mm). Bottom part A is the round grill (72 × 71 × 12 mm).
 
 ![Original Open Air placement](renders/original-reference.png)
@@ -90,6 +86,8 @@ Our shell keeps that floor: two 16 mm ports under the SPS30, the round grill ove
 | SenseAir S8 beside the PM sensor | Floor, not in the exhaust | SCD30 (SCD41 uses the same screws) |
 | SGP41 facing out next to USB | Side wall by the USB opening | SGP41 |
 | No separate ambient T/RH | — | SHT45 on the intake side |
+
+The outdoor-flat and outdoor-vertical models were not moved after this photo pass. They still put the USB on the base bottom, which matches the photos, but they still put the gas sensor on the side wall and the CO2 module beside the particle sensor on the floor. The photos put the CO2 carrier on the floor and the SGP41 on the bottom edge of a board that stands in the middle.
 | Vertical PCB | Back of the bottom shell | LOLIN32 or the ESP32-S3, standing |
 | USB-C on that PCB, low | Side of the bottom shell | BQ25185 USB-C, same opening |
 | No battery, no solar | — | Pack and M8 inlet, off the airflow |

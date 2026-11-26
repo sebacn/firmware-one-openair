@@ -25,17 +25,31 @@ RENDERS = ROOT / "renders"
 # name, color, center (mm), size (mm)
 # Board pose: USB edge toward the cover's -X bulge, 57 mm running inward,
 # 44 mm vertical, sheet parallel to the XZ plane. See the README.
-# USB edge of the 57.03 x 43.96 mm board is at world x = -28 (the cover bulge).
-# pcb x 170.34 -> world x -28, and pcb x decreases as world x increases.
-# pcb y 61.41 -> world z 18, so the USB end of that edge is the lower end.
+# Pose from the O-1PST assembly photos, not from a guessed side-wall mount.
+# The board stands in the middle of the ring. Its short edge (USB, LED, button,
+# SGP41) is the bottom edge. High KiCad X is down. KiCad Y runs along world X,
+# with the USB end toward -X. The sheet is thin in Y: the PMS5003T is behind
+# it (+Y) and the SenseAir carrier is on the floor to its right (+X).
+# KiCad: USB1 (168, 67.37), D2 (166.57, 76.91), SW1 (167.80, 81.06),
+# I2C1 (165.74, 101.53), U2 (124, 83.4). Edge x 113.31..170.34, y 61.41..105.37.
+def _x(pcb_y):
+    return -22.0 + (pcb_y - 61.41)
+
+def _z(pcb_x):
+    return 16.0 + (170.34 - pcb_x)
+
 PARTS = [
-    ("PCB", "#2f6b4f", (0.5, 18.0, 40.0), (57.0, 1.6, 44.0)),
-    ("ESP32-C3", "#6b4c9a", (18.3, 20.0, 40.0), (16.6, 2.4, 13.2)),
-    ("USB-C", "#222222", (-27.3, 20.4, 24.0), (7.5, 3.2, 9.0)),
-    ("SGP41", "#f2c14e", (-34.0, 18.0, 58.0), (12.0, 4.5, 10.0)),
-    ("CO2 carrier", "#1f7a4d", (0.5, 16.4, 46.0), (54.0, 1.6, 32.0)),
-    ("SenseAir S8", "#e07a3d", (0.5, 11.4, 48.0), (33.5, 8.5, 20.0)),
-    ("PMS5003T", "#3d8bfd", (4.0, -10.0, 23.0), (50.0, 38.0, 21.0)),
+    ("PCB", "#2f6b4f", (0.0, -18.0, 44.5), (44.0, 1.6, 57.0)),
+    ("ESP32-C3", "#6b4c9a", (_x(83.40), -20.2, _z(124.00)), (13.2, 2.4, 16.6)),
+    ("USB-C", "#222222", (_x(67.37), -21.0, 14.2), (9.0, 3.2, 7.5)),
+    ("LED", "#f4f1ea", (_x(76.91), -20.4, _z(166.57)), (3.0, 2.4, 4.0)),
+    ("Button", "#d0d0d0", (_x(81.06), -20.6, _z(167.80)), (4.5, 3.0, 3.5)),
+    ("SGP41", "#f2c14e", (_x(101.53), -26.0, _z(165.74)), (10.0, 12.0, 4.5)),
+    ("PMS5003T", "#3d8bfd", (-16.0, 14.0, 22.0), (38.0, 50.0, 21.0)),
+    ("CO2 carrier", "#1f7a4d", (20.0, 12.0, 12.3), (32.0, 54.0, 1.6)),
+    ("SenseAir S8", "#e07a3d", (20.0, 12.0, 17.4), (20.0, 33.5, 8.5)),
+    ("S8 screw A", "#555555", (33.0, -8.0, 14.2), (4.0, 4.0, 3.0)),
+    ("S8 screw B", "#555555", (33.0, 32.0, 14.2), (4.0, 4.0, 3.0)),
 ]
 
 
@@ -73,9 +87,9 @@ def build_scene(exploded=False):
     scene.add_geometry(grill, node_name="Grill", geom_name="Grill")
     scene.add_geometry(cover, node_name="Cover", geom_name="Cover")
     for name, color, mesh in component_meshes():
-        if exploded and name != "PMS5003T":
+        if exploded and name in ("PCB", "ESP32-C3", "USB-C", "LED", "Button", "SGP41"):
             mesh = mesh.copy()
-            mesh.apply_translation([0, 0, 18])
+            mesh.apply_translation([0, 0, 28])
         paint(mesh, color, 255)
         scene.add_geometry(mesh, node_name=name, geom_name=name)
     return scene
@@ -106,9 +120,9 @@ def _frame(path, view, elev, azim, exploded=False, section=False):
     add_mesh(ax, cover, "#d9dde3", 0.18 if not section else 0.55)
     for name, color, center, size in PARTS:
         mesh = box_mesh(center, size)
-        if exploded and name != "PMS5003T":
-            mesh.apply_translation([0, 0, 18])
-            center = (center[0], center[1], center[2] + 18)
+        if exploded and name in ("PCB", "ESP32-C3", "USB-C", "LED", "Button", "SGP41"):
+            mesh.apply_translation([0, 0, 28])
+            center = (center[0], center[1], center[2] + 28)
         add_mesh(ax, mesh, color, 1)
         ax.text(center[0], center[1], center[2] + size[2] / 2 + 1.2, name, fontsize=7)
     lo, hi = scene_bounds([base, cover, grill])
