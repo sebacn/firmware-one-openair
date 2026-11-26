@@ -63,7 +63,24 @@ def load_shells():
     # The extra length on -X is the USB side and stays on -X.
     c = cover.bounds
     cover.apply_translation([1.15, 0.0, 3.06 - c[0, 2]])
-    return base, grill, cover
+    # The STLs sit roof-down: the cover cap is at the low end and the sleeve
+    # opens upward. Turn each shell 180° about a horizontal axis through its
+    # own center so the cap is on top, the grill face is down, and the ring's
+    # lip is under the parts. The internals are not moved.
+    return flip_shell(base), flip_shell(grill), flip_shell(cover)
+
+
+def flip_shell(mesh):
+    mesh = mesh.copy()
+    center = (mesh.bounds[0] + mesh.bounds[1]) / 2
+    # 180° about X. Det = 1, so the face winding stays valid.
+    transform = np.eye(4)
+    transform[1, 1] = -1
+    transform[2, 2] = -1
+    transform[1, 3] = 2 * center[1]
+    transform[2, 3] = 2 * center[2]
+    mesh.apply_transform(transform)
+    return mesh
 
 
 def _cable():
