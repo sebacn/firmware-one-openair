@@ -117,9 +117,12 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #define OLED_I2C_ADDR 0x3C
 
 /**
- * Modular harness only (see hardware/modular rev A).
- * SPS30_5V_EN_PIN: active-high enable for the 5 V boost that feeds the SPS30.
- * VBAT_ADC_PIN: ADC1 input after the 100k/100k divider.
+ * Optional hooks, not set by the modular envs (hardware/modular rev C).
+ * That sheet powers the dev board from its USB connector, ties SPS30 VDD to
+ * the board's 5V pin, and feeds every 3.3 V module from the board's 3V3 pin.
+ * There is no pack and no boost enable to drive.
+ * SPS30_5V_EN_PIN: active-high GPIO for a discrete 5 V switch, if one is fitted.
+ * VBAT_ADC_PIN: ADC1 input after a pack divider, if one is fitted.
  * VBAT_DIVIDER_NUM/DEN: pack voltage = pin voltage * NUM / DEN.
  */
 #ifndef VBAT_DIVIDER_NUM
@@ -407,7 +410,11 @@ static void modularCo2Update(void) {
 
 static void modularSpsPower(bool on) {
 #ifdef SPS30_5V_EN_PIN
+  // Only when a discrete high-side switch is built. The modular sheet wires
+  // SPS30 VDD straight to the dev-board 5V pin, so the rail stays on.
   digitalWrite(SPS30_5V_EN_PIN, on ? HIGH : LOW);
+#else
+  (void)on;
 #endif
   modularSpsPowerIsOn = on;
 }
@@ -551,13 +558,15 @@ void setup() {
   hardwareIdentity.begin();
 
 #ifdef SPS30_5V_EN_PIN
-  // 5 V boost enable is active high (Adafruit 6106 / TPS61023). High keeps the
-  // SPS30 powered. Modular builds read it over I2C; SPS30_ALWAYS_ON=0 powers
-  // the boost down between readings.
+  // Optional discrete 5 V switch, active high. The modular envs do not define
+  // this pin: SPS30 VDD is tied to the dev-board 5V pin. SPS30_ALWAYS_ON=0
+  // drives the switch low between readings when the pin is defined.
   pinMode(SPS30_5V_EN_PIN, OUTPUT);
   digitalWrite(SPS30_5V_EN_PIN, HIGH);
 #endif
 #ifdef VBAT_ADC_PIN
+  // Optional pack divider. Not fitted on the modular sheet, and not defined
+  // by the modular envs.
   pinMode(VBAT_ADC_PIN, INPUT);
   analogReadResolution(12);
   analogSetPinAttenuation(VBAT_ADC_PIN, ADC_11db);
