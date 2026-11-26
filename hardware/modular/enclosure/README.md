@@ -129,18 +129,23 @@ Browser assemblies, one mesh per part, are in [`assembly/`](assembly/index.html)
 
 These two follow the published DIY outdoor STLs in [`reference-outdoor/`](reference-outdoor/README.md) (CC BY-SA 4.0, same files as `hardware/open-air/enclosure/`). The footprint stays the original top, **91.5 × 86.7 mm**. Only the height changes.
 
-| | Original | A, battery flat | B, battery vertical |
+Each variant is the same three parts as the original: round grill, base ring, cover. The cover's lower opening is 84.2 mm so it slides over the 83 mm ring with about 0.6 mm per side, for 16 mm. The grill is 70 mm across and 3.2 mm thick and drops onto a lip in the ring.
+
+| | Original (measured) | A, battery flat | B, battery vertical |
 | --- | --- | --- | --- |
-| Plan | 91.5 × 86.7 mm | 91.5 × 86.7 mm | 91.5 × 86.7 mm |
-| Body height | 81.9 mm cover, 85 mm assembled | **112 mm** (+30 mm attic) | **94 mm** (+12 mm) |
+| Plan | cover 91.5 × 85.0; published 91.5 × 86.7 | 91.5 × 86.7 | 91.5 × 86.7 |
+| Grill | 71.5 × 71.2 × 11.5 | Ø70 × 3.2 | Ø70 × 3.2 |
+| Base ring | 83.0 × 82.9 × 26.7 | 83 × 83 × 28 | 83 × 83 × 28 |
+| Cover | 91.5 × 85.0 × 81.9 | 91.5 × 86.7 × **112** | 91.5 × 86.7 × **94** |
+| Assembled height | 85 published | **124** (cover plus 12 mm of ring below it) | **106** |
 
-The floor is the same in both: SPS30 over the two bottom ports, SCD30 beside it, SGP41 on the USB wall, SHT45 on the intake, BQ25185 at the original USB height, M8 hole Ø8.2 mm on the bottom. Soldered wiring uses the same 4.8 mm standoffs and tie slots.
+The BQ25185 lies in the base, USB-C down. The cutout is an 18 × 14 × 3.4 mm recess in the ring bottom with a 10 × 6 mm hole, so the connector is up inside a drip lip. A 6 mm boss beside it can take an optional cap. That pocket is on the opposite side from the M8 hole (Ø8.2 mm) and clear of the two 16 mm particle ports. The side bay in B is 30 mm: 22 mm cells, 4 mm PCM, and clearance, still inside the 91.5 mm width.
 
-**A, flat.** The 70 × 50 × 18 mm pack lies under the lid, on a shelf above the electronics, so the cells are not in the sensor air. Easiest pack access. Tallest print. Heat from the ESP32 is one shelf below the cells.
+**A, flat.** The 70 × 50 × 18 mm pack lies under the lid, above the electronics. Easiest pack access. The cells are out of the sensor air. Tallest print.
 
-**B, vertical.** The pack stands on the side wall opposite the USB, 20 mm thick, so the original height only grows by 12 mm. The sensor floor is unchanged. The pack is closer to the SPS30 exhaust wall than in A, so keep the thermal divider between them.
+**B, vertical.** The 22 mm pack stands on the side wall opposite the exhaust, with the PCM in that same bay. Only 12 mm taller than the original cover. The pack is nearer the particle exhaust than in A.
 
-Print both in ASA or PETG, floor down, as in the earlier note. Files: `outdoor-flat/` and `outdoor-vertical/` (`shell.stl`, `lid.stl`, `grill.stl`). Assemblies: `assembly/outdoor-flat.glb` and `assembly/outdoor-vertical.glb`. The viewer lists these first and keeps the older three under Previous. Stills: `renders/outdoor-flat-*.png` and `renders/outdoor-vertical-*.png`.
+Print both in ASA or PETG, floor down. Files: `outdoor-flat/` and `outdoor-vertical/` (`grill.stl`, `base.stl`, `cover.stl`). Dimension sheets: `renders/outdoor-flat-dimensions.png` (and `.pdf`) and the same for `outdoor-vertical`, plus `renders/original-dimensions.png` and `renders/size-comparison.png`. Assemblies: `assembly/outdoor-flat.glb`, `assembly/outdoor-vertical.glb`, and `assembly/original.glb`.
 
 ## Open points
 
