@@ -283,8 +283,8 @@ A build on 2026-11-26, rev C. Variant A is the LOLIN32 image (`lolin32`). `modul
 
 | Environment | Result | RAM | Flash |
 | --- | --- | --- | --- |
-| `modular-lolin32` | success | 78364 / 327680 bytes (23.9%) | 1785645 / 1966080 bytes (90.8%) |
-| `modular-esp32-d1mini` | success | 78364 / 327680 bytes (23.9%) | 1785709 / 1966080 bytes (90.8%) |
+| `modular-lolin32` | success | 78364 / 327680 bytes (23.9%) | 1785629 / 1966080 bytes (90.8%) |
+| `modular-esp32-d1mini` | success | 78364 / 327680 bytes (23.9%) | 1785693 / 1966080 bytes (90.8%) |
 | `modular-esp32s3-n16r8` | success | 73600 / 327680 bytes (22.5% of internal SRAM; the 8 MB PSRAM is not in this number) | 1674273 / 1966080 bytes (85.2%) |
 
 Those numbers are with `AG_MODULAR_I2C` (SCD30/SCD41 auto-detect and SPS30 over I2C) and without `SPS30_5V_EN_PIN` or `VBAT_ADC_PIN`. The two variant A rows use the same flags on board `lolin32`. Their flash totals differ because the environment name is compiled into file paths. The `esp32-c3` environment was not changed and was not rebuilt.
