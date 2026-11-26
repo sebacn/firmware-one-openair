@@ -145,7 +145,7 @@ The BQ25185 lies in the base, USB-C down. The cutout is an 18 × 14 × 3.4 mm re
 
 **B, vertical.** The 22 mm pack stands on the side wall opposite the exhaust, with the PCM in that same bay. Only 12 mm taller than the original cover. The pack is nearer the particle exhaust than in A.
 
-Print both in ASA or PETG, floor down. Files: `outdoor-flat/` and `outdoor-vertical/` (`grill.stl`, `base.stl`, `cover.stl`). Dimension sheets: `renders/outdoor-flat-dimensions.png` (and `.pdf`) and the same for `outdoor-vertical`, plus `renders/original-dimensions.png` and `renders/size-comparison.png`. Assemblies: `assembly/outdoor-flat.glb`, `assembly/outdoor-vertical.glb`, and `assembly/original.glb`.
+Print both in ASA or PETG, floor down. Files: `outdoor-flat/` and `outdoor-vertical/` (`grill.stl`, `base.stl`, `cover.stl`). Dimension sheets: `renders/outdoor-flat-dimensions.png` (and `.pdf`) and the same for `outdoor-vertical`, plus `renders/original-dimensions.png`. Orthographic views of the original parts are `renders/original-grill-orthographic.png`, `renders/original-base-orthographic.png`, `renders/original-cover-orthographic.png`, and `renders/original-orthographic.pdf`. Same-scale comparison: `renders/size-comparison.png` and `renders/size-comparison.pdf`. Assemblies: `assembly/outdoor-flat.glb`, `assembly/outdoor-vertical.glb`, and `assembly/original.glb`.
 
 ## Open points
 
