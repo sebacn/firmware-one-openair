@@ -22,34 +22,30 @@ ROOT = Path(__file__).resolve().parent
 REF = ROOT / "reference-outdoor"
 RENDERS = ROOT / "renders"
 
-# name, color, center (mm), size (mm)
-# Board pose: USB edge toward the cover's -X bulge, 57 mm running inward,
-# 44 mm vertical, sheet parallel to the XZ plane. See the README.
-# Pose from the O-1PST assembly photos, not from a guessed side-wall mount.
-# The board stands in the middle of the ring. Its short edge (USB, LED, button,
-# SGP41) is the bottom edge. High KiCad X is down. KiCad Y runs along world X,
-# with the USB end toward -X. The sheet is thin in Y: the PMS5003T is behind
-# it (+Y) and the SenseAir carrier is on the floor to its right (+X).
-# KiCad: USB1 (168, 67.37), D2 (166.57, 76.91), SW1 (167.80, 81.06),
-# I2C1 (165.74, 101.53), U2 (124, 83.4). Edge x 113.31..170.34, y 61.41..105.37.
+# Step-4 photo: the board stands in front of a PMS5003T that is also standing,
+# inlet end down on the tray, cable off the top. High KiCad X is down. High
+# KiCad Y (the SGP41 socket) is to the left. The sheet is thin in Y.
+# USB1 (168, 67.37), D2 (166.57, 76.91), SW1 (167.80, 81.06),
+# I2C1 (165.74, 101.53), U2 (124, 83.4), PM1 (141.71, 70.50).
 def _x(pcb_y):
-    return -22.0 + (pcb_y - 61.41)
+    return -30.0 + (105.37 - pcb_y)
 
 def _z(pcb_x):
-    return 16.0 + (170.34 - pcb_x)
+    return 14.0 + (170.34 - pcb_x)
 
 PARTS = [
-    ("PCB", "#2f6b4f", (0.0, -18.0, 44.5), (44.0, 1.6, 57.0)),
-    ("ESP32-C3", "#6b4c9a", (_x(83.40), -20.2, _z(124.00)), (13.2, 2.4, 16.6)),
-    ("USB-C", "#222222", (_x(67.37), -21.0, 14.2), (9.0, 3.2, 7.5)),
-    ("LED", "#f4f1ea", (_x(76.91), -20.4, _z(166.57)), (3.0, 2.4, 4.0)),
-    ("Button", "#d0d0d0", (_x(81.06), -20.6, _z(167.80)), (4.5, 3.0, 3.5)),
-    ("SGP41", "#f2c14e", (_x(101.53), -26.0, _z(165.74)), (10.0, 12.0, 4.5)),
-    ("PMS5003T", "#3d8bfd", (-16.0, 14.0, 22.0), (38.0, 50.0, 21.0)),
-    ("CO2 carrier", "#1f7a4d", (20.0, 12.0, 12.3), (32.0, 54.0, 1.6)),
-    ("SenseAir S8", "#e07a3d", (20.0, 12.0, 17.4), (20.0, 33.5, 8.5)),
-    ("S8 screw A", "#555555", (33.0, -8.0, 14.2), (4.0, 4.0, 3.0)),
-    ("S8 screw B", "#555555", (33.0, 32.0, 14.2), (4.0, 4.0, 3.0)),
+    ("PCB", "#2f6b4f", (-8.0, -4.0, 42.5), (44.0, 1.6, 57.0)),
+    ("ESP32-C3", "#6b4c9a", (_x(83.40), -5.8, _z(124.00)), (13.2, 2.4, 16.6)),
+    ("USB-C", "#222222", (_x(67.37), -6.2, 11.5), (9.0, 3.2, 7.5)),
+    ("LED", "#f4f1ea", (_x(76.91), -5.6, _z(166.57)), (3.0, 2.4, 4.0)),
+    ("Button", "#d0d0d0", (_x(81.06), -5.8, _z(167.80)), (4.5, 3.0, 3.5)),
+    ("SGP41", "#f2c14e", (_x(101.53) - 6.0, -4.0, _z(165.74)), (12.0, 4.5, 10.0)),
+    # 50 mm tall, 38 mm wide, 21 mm deep. Bottom face is the inlet. Outlet is up.
+    ("PMS5003T", "#3d8bfd", (2.0, 16.0, 37.0), (38.0, 21.0, 50.0)),
+    ("CO2 carrier", "#1f7a4d", (16.0, -18.0, 12.4), (54.0, 32.0, 1.6)),
+    ("SenseAir S8", "#e07a3d", (16.0, -18.0, 17.4), (33.5, 20.0, 8.5)),
+    ("S8 screw A", "#555555", (0.0, -28.0, 14.4), (4.0, 4.0, 3.0)),
+    ("S8 screw B", "#555555", (32.0, -8.0, 14.4), (4.0, 4.0, 3.0)),
 ]
 
 
@@ -70,8 +66,22 @@ def load_shells():
     return base, grill, cover
 
 
+def _cable():
+    # From the outlet on top of the standing PMS5003T, forward, down to PM1.
+    segments = [
+        ((2.0, 16.0, 66.0), (4.0, 4.0, 8.0)),
+        ((4.0, 6.0, 66.0), (4.0, 18.0, 4.0)),
+        ((5.0, -2.0, 54.0), (4.0, 4.0, 24.0)),
+    ]
+    parts = [box_mesh(c, s) for c, s in segments]
+    mesh = trimesh.util.concatenate(parts)
+    return "PM cable", "#c4a574", mesh
+
+
 def component_meshes():
-    return [(name, color, box_mesh(center, size)) for name, color, center, size in PARTS]
+    meshes = [(name, color, box_mesh(center, size)) for name, color, center, size in PARTS]
+    meshes.append(_cable())
+    return meshes
 
 
 def build_scene(exploded=False):
@@ -103,7 +113,7 @@ def export_glb():
     return path
 
 
-def _frame(path, view, elev, azim, exploded=False, section=False):
+def _frame(path, view, elev, azim, exploded=False, section=False, hide_cover=False):
     base, grill, cover = load_shells()
     if exploded:
         grill.apply_translation([0, 0, -28])
@@ -117,14 +127,16 @@ def _frame(path, view, elev, azim, exploded=False, section=False):
     ax = fig.add_subplot(111, projection="3d")
     add_mesh(ax, base, "#c5ccd3", 0.9)
     add_mesh(ax, grill, "#8e99a4", 0.95)
-    add_mesh(ax, cover, "#d9dde3", 0.18 if not section else 0.55)
-    for name, color, center, size in PARTS:
-        mesh = box_mesh(center, size)
-        if exploded and name in ("PCB", "ESP32-C3", "USB-C", "LED", "Button", "SGP41"):
+    if not hide_cover:
+        add_mesh(ax, cover, "#d9dde3", 0.18 if not section else 0.55)
+    board = {"PCB", "ESP32-C3", "USB-C", "LED", "Button", "SGP41", "PM cable"}
+    for name, color, mesh in component_meshes():
+        if exploded and name in board:
+            mesh = mesh.copy()
             mesh.apply_translation([0, 0, 28])
-            center = (center[0], center[1], center[2] + 28)
         add_mesh(ax, mesh, color, 1)
-        ax.text(center[0], center[1], center[2] + size[2] / 2 + 1.2, name, fontsize=7)
+        c = mesh.centroid
+        ax.text(c[0], c[1], c[2] + 2, name, fontsize=7)
     lo, hi = scene_bounds([base, cover, grill])
     span = (hi - lo).max() / 2 + (28 if exploded else 8)
     c = (lo + hi) / 2
@@ -179,6 +191,8 @@ def main():
     _frame(RENDERS / "original-assembly-top.png", "top", 90, 0)
     _frame(RENDERS / "original-assembly-section.png", "section", 18, -70, section=True)
     _frame(RENDERS / "original-exploded.png", "exploded", 22, -58, exploded=True)
+    # Same view as assembly step 4: cover off, from the front-left, looking down.
+    _frame(RENDERS / "original-assembly-step4.png", "step 4 angle", 30, -125, hide_cover=True)
     legend()
 
 
