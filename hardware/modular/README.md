@@ -360,4 +360,4 @@ The S3 image was linked against the `qio_opi` SDK libraries and `esptool` was in
 
 ## Enclosure
 
-Three shell variants for these modules, with soldered wiring and no board sockets, are in [`enclosure/`](enclosure/README.md). The comparison sheet is [`enclosure/renders/comparison.png`](enclosure/renders/comparison.png).
+The enclosure that matches this revision is the original Open Air cover and base with a new carrier, in [`enclosure/`](enclosure/README.md). The older battery shells in that folder are not this design.

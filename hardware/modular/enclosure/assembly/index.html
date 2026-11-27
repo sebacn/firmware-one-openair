@@ -18,12 +18,13 @@
   <header>
     <label>Variant
       <select id="variant">
-        <optgroup label="Outdoor DIY">
-          <option value="outdoor-flat" selected>A — battery flat on top — 91.5 × 86.7 × 124 mm</option>
-          <option value="outdoor-vertical">B — battery on the side — 91.5 × 86.7 × 106 mm</option>
-          <option value="original">Original Open Air — 91.5 × 86.7 × 85 mm</option>
+        <optgroup label="Current">
+          <option value="modular" selected>USB-only carrier in the original shells</option>
         </optgroup>
         <optgroup label="Previous">
+          <option value="original">Original Open Air kit</option>
+          <option value="outdoor-flat">A — battery flat on top</option>
+          <option value="outdoor-vertical">B — battery on the side</option>
           <option value="variant-1">1 — rear battery</option>
           <option value="variant-2">2 — battery plinth</option>
           <option value="variant-3">3 — sensor pod</option>
@@ -33,7 +34,7 @@
     <label><input id="hide" type="checkbox" /> Hide shell</label>
     <label>Shell opacity <input id="opacity" type="range" min="0" max="100" value="35" /></label>
     <div id="legend"></div>
-    <div id="dims">A: grill 3.2, base 28, cover 112. Assembled 124 mm. USB-C recess 18×14 in the base bottom. M8 hole Ø8.2. PM ports Ø16.</div>
+    <div id="dims">Original cover and base. New carrier: SHT45, SGP41 and SCD30 face down; SPS30 and the dev board stand with the inlet and USB at the bottom; M8 4-pin faces down.</div>
   </header>
   <div id="view"></div>
   <script type="importmap">
@@ -100,7 +101,7 @@
           if (!obj.isMesh) return;
           const mats = [].concat(obj.material);
           const name = obj.name || "part";
-          if (name === "Shell" || name === "Lid" || name === "Cover" || name === "Base" || name === "Grill") shellMats.push(...mats);
+          if (name === "Shell" || name === "Lid" || name === "Cover" || name === "Base" || name === "Grill" || name === "Carrier") shellMats.push(...mats);
           if (seen.has(name)) return;
           seen.add(name);
           const color = mats[0] && mats[0].color ? "#" + mats[0].color.getHexString() : "#ccc";
@@ -112,7 +113,8 @@
       });
     }
     const DIMS = {
-      "outdoor-flat": "A flat: 91.5 × 86.7 × 124 mm. Grill 3.2, base 28, cover 112. USB-C recess 18×14 mm in the base bottom. M8 Ø8.2. PM ports Ø16.",
+      "modular": "Current: original cover and base, new carrier. No battery. SHT45, SGP41 and SCD30 face the bottom vents. SPS30 stands, inlet down. Dev board stands, USB down. M8 4-pin faces down.",
+      "outdoor-flat": "Retired. Battery flat on top. 91.5 × 86.7 × 124 mm.",
       "outdoor-vertical": "B vertical: 91.5 × 86.7 × 106 mm. Grill 3.2, base 28, cover 94. Side bay 30 mm for a 22 mm pack plus a 4 mm PCM. Same USB, M8 and PM holes.",
       "original": "Original O-1PST: grill down, cover up. PCB stands in the middle, USB-C on the bottom edge. PMS5003T stands behind it, inlet down, cable off the top. SenseAir S8 is screwed flat to the floor. No separate SHT.",
       "variant-1": "Previous variant 1. Not the three-part outdoor shell.",
@@ -129,7 +131,7 @@
       renderer.setSize(view.clientWidth, view.clientHeight);
     });
     (function tick() { requestAnimationFrame(tick); controls.update(); renderer.render(scene, camera); })();
-    load("outdoor-flat");
+    load("modular");
   </script>
 </body>
 </html>
