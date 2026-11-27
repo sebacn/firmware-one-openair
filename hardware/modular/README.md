@@ -360,4 +360,4 @@ The S3 image was linked against the `qio_opi` SDK libraries and `esptool` was in
 
 ## Enclosure
 
-The enclosure for this revision is the original Open Air cover and base with a printed carrier, in [`enclosure/`](enclosure/README.md). Viewer: [`enclosure/assembly/index.html`](enclosure/assembly/index.html).
+The enclosure for this revision is the original Open Air cover and base, with the original grill reworked on the inside only, in [`enclosure/`](enclosure/README.md). Viewer: [`enclosure/assembly/index.html`](enclosure/assembly/index.html).

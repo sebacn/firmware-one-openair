@@ -5,7 +5,7 @@ These three STLs are the files in [diy_outdoor_3d.zip](https://www.airgradient.c
 | File | Outer size (mm) | Role |
 | --- | --- | --- |
 | Top Part C | 91.5 × 85.0 × 81.9 | Cover. Used as published. Slides over the base. |
-| Bottom Part B | 83.0 × 82.9 × 26.7 | Base ring. Used as published. The lip holds the carrier. |
-| Bottom Part A | 71.5 × 71.2 × 11.5 | Original grill. The printed carrier in `../carrier/` takes this seat. |
+| Bottom Part B | 83.0 × 82.9 × 26.7 | Base ring. Used as published. The lip holds the grill. |
+| Bottom Part A | 71.5 × 71.2 × 11.5 | Original grill. The modular print is this mesh with the interior reworked: [`../grill-modular.stl`](../grill-modular.stl). |
 
-The modular assembly that uses the cover and the base is [`../assembly/modular.glb`](../assembly/modular.glb).
+The modular assembly that uses the cover, the base, and that grill is [`../assembly/modular.glb`](../assembly/modular.glb).
