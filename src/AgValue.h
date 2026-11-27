@@ -70,6 +70,13 @@ public:
   void setAirGradient(AirGradient *ag);
   void setSatellites(AgSatellites *satellites);
 
+  /**
+   * Optional M8 sense rails, in millivolts. Published only on the local-server
+   * and MQTT payload (toString localServer=true). Omitted until the first sample.
+   * usbPresent forces the published VBAT and VSOL values to 0.
+   */
+  void setExternalRails(int vbatMv, int vsolMv, bool usbPresent);
+
   // Enumeration for every AG measurements
   enum MeasurementType {
     Temperature,
@@ -240,6 +247,10 @@ private:
   int _bootCount;
   int _resetReason;
   bool _debug = false;
+  bool _extRailsValid = false;
+  int _vbatMv = 0;
+  int _vsolMv = 0;
+  bool _usbPresent = false;
 
   /**
    * @brief Get PMS5003 firmware version string

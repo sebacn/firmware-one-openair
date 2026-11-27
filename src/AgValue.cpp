@@ -79,6 +79,14 @@ void Measurements::setAirGradient(AirGradient *ag) { this->ag = ag; }
 
 void Measurements::setSatellites(AgSatellites *satellites) { this->satellites_ = satellites; }
 
+void Measurements::setExternalRails(int vbatMv, int vsolMv, bool usbPresent) {
+  _extRailsValid = true;
+  _usbPresent = usbPresent;
+  // USB power means the M8 sense pins are not the operating supply. Report 0.
+  _vbatMv = usbPresent ? 0 : vbatMv;
+  _vsolMv = usbPresent ? 0 : vsolMv;
+}
+
 void Measurements::printCurrentAverage() {
   Serial.println();
   if (config.hasSensorS8) {
@@ -997,6 +1005,13 @@ String Measurements::toString(bool localServer, AgFirmwareMode fwMode, int rssi,
     root["serialno"] = ag->deviceId();
     root["firmware"] = ag->getVersion();
     root["model"] = AgFirmwareModeName(fwMode);
+    // Millivolts. Present only after setExternalRails(); the cloud post
+    // (localServer == false) does not grow these keys.
+    if (_extRailsValid) {
+      root["vbat"] = _vbatMv;
+      root["vsol"] = _vsolMv;
+      root["usb"] = _usbPresent ? 1 : 0;
+    }
   } else {
 #ifndef ESP8266
     root["resetReason"] = _resetReason;

@@ -117,19 +117,34 @@ CC BY-SA 4.0 Attribution-ShareAlike 4.0 International License
 #define OLED_I2C_ADDR 0x3C
 
 /**
- * Optional hooks, not set by the modular envs (hardware/modular rev C).
- * That sheet powers the dev board from its USB connector, ties SPS30 VDD to
- * the board's 5V pin, and feeds every 3.3 V module from the board's 3V3 pin.
- * There is no pack and no boost enable to drive.
+ * Optional hooks.
  * SPS30_5V_EN_PIN: active-high GPIO for a discrete 5 V switch, if one is fitted.
- * VBAT_ADC_PIN: ADC1 input after a pack divider, if one is fitted.
- * VBAT_DIVIDER_NUM/DEN: pack voltage = pin voltage * NUM / DEN.
+ * The modular sheets (hardware/modular rev D) leave that undefined: SPS30 VDD
+ * stays on the dev-board 5V pin.
+ * VBAT_ADC_PIN / VSOL_ADC_PIN: ADC1 inputs after the M8 sense dividers.
+ *   pin millivolts * NUM / DEN = connector millivolts.
+ * USB_PRESENT_ADC_PIN: ADC1 input on the divider from USB-jack VBUS
+ *   (before the dev board's ideal diode or Schottky, not the 5V header).
+ *   At or above USB_PRESENT_THRESHOLD_MV, VBAT and VSOL are reported as 0.
+ * analogReadMilliVolts() applies the esp_adc_cal curve for the pin attenuation.
  */
 #ifndef VBAT_DIVIDER_NUM
 #define VBAT_DIVIDER_NUM 2
 #endif
 #ifndef VBAT_DIVIDER_DEN
 #define VBAT_DIVIDER_DEN 1
+#endif
+#ifndef VSOL_DIVIDER_NUM
+#define VSOL_DIVIDER_NUM 10
+#endif
+#ifndef VSOL_DIVIDER_DEN
+#define VSOL_DIVIDER_DEN 1
+#endif
+#ifndef USB_PRESENT_THRESHOLD_MV
+#define USB_PRESENT_THRESHOLD_MV 1200
+#endif
+#ifndef M8_ADC_SAMPLES
+#define M8_ADC_SAMPLES 16
 #endif
 
 /**
@@ -231,6 +246,9 @@ static void tempHumUpdate(void);
 static void co2Update(void);
 static void fanControllerUpdate(void);
 static void printMeasurements();
+#ifdef USB_PRESENT_ADC_PIN
+static void readM8Supply();
+#endif
 static void mdnsInit(void);
 static void createMqttTask(void);
 static void initMqtt(void);
@@ -564,12 +582,24 @@ void setup() {
   pinMode(SPS30_5V_EN_PIN, OUTPUT);
   digitalWrite(SPS30_5V_EN_PIN, HIGH);
 #endif
-#ifdef VBAT_ADC_PIN
-  // Optional pack divider. Not fitted on the modular sheet, and not defined
-  // by the modular envs.
-  pinMode(VBAT_ADC_PIN, INPUT);
+#if defined(USB_PRESENT_ADC_PIN) || defined(VBAT_ADC_PIN) || defined(VSOL_ADC_PIN)
+  // 11 dB is the ~0-3.1 V range. ADC1 only: ADC2 drops out while Wi-Fi is on.
   analogReadResolution(12);
+#endif
+#ifdef USB_PRESENT_ADC_PIN
+  pinMode(USB_PRESENT_ADC_PIN, INPUT);
+  analogSetPinAttenuation(USB_PRESENT_ADC_PIN, ADC_11db);
+#endif
+#ifdef VBAT_ADC_PIN
+  pinMode(VBAT_ADC_PIN, INPUT);
   analogSetPinAttenuation(VBAT_ADC_PIN, ADC_11db);
+#endif
+#ifdef VSOL_ADC_PIN
+  pinMode(VSOL_ADC_PIN, INPUT);
+  analogSetPinAttenuation(VSOL_ADC_PIN, ADC_11db);
+#endif
+#ifdef USB_PRESENT_ADC_PIN
+  readM8Supply();
 #endif
 
   // Enable cullular module power board
@@ -983,11 +1013,63 @@ static void fanControllerUpdate(void) {
   }
 }
 
+#if defined(USB_PRESENT_ADC_PIN) || defined(VBAT_ADC_PIN)
+// Average calibrated millivolts. The first conversion after a mux change is
+// discarded. analogReadMilliVolts() uses esp_adc_cal for this attenuation.
+static int averagedAdcMv(int pin) {
+  (void)analogReadMilliVolts(pin);
+  uint32_t sum = 0;
+  for (int i = 0; i < M8_ADC_SAMPLES; i++) {
+    sum += analogReadMilliVolts(pin);
+  }
+  return (int)(sum / M8_ADC_SAMPLES);
+}
+
+static int dividerMv(int pinMv, int num, int den) {
+  return pinMv * num / den;
+}
+#endif
+
+#ifdef USB_PRESENT_ADC_PIN
+static void readM8Supply() {
+  const int usbPinMv = averagedAdcMv(USB_PRESENT_ADC_PIN);
+  const bool usbPresent = usbPinMv >= USB_PRESENT_THRESHOLD_MV;
+  int vbatMv = 0;
+  int vsolMv = 0;
+  int vbatPinMv = 0;
+  int vsolPinMv = 0;
+  if (!usbPresent) {
+#ifdef VBAT_ADC_PIN
+    vbatPinMv = averagedAdcMv(VBAT_ADC_PIN);
+    vbatMv = dividerMv(vbatPinMv, VBAT_DIVIDER_NUM, VBAT_DIVIDER_DEN);
+#endif
+#ifdef VSOL_ADC_PIN
+    vsolPinMv = averagedAdcMv(VSOL_ADC_PIN);
+    vsolMv = dividerMv(vsolPinMv, VSOL_DIVIDER_NUM, VSOL_DIVIDER_DEN);
+#endif
+  }
+  measurements.setExternalRails(vbatMv, vsolMv, usbPresent);
+  if (usbPresent) {
+    Serial.printf("M8 USB present (GPIO%d %d mV >= %d): VBAT 0 mV, VSOL 0 mV\n",
+                  USB_PRESENT_ADC_PIN, usbPinMv, USB_PRESENT_THRESHOLD_MV);
+  } else {
+    Serial.printf("M8 USB absent (GPIO%d %d mV): VBAT GPIO%d pin %d mV -> %d mV (%d/%d), "
+                  "VSOL GPIO%d pin %d mV -> %d mV (%d/%d)\n",
+                  USB_PRESENT_ADC_PIN, usbPinMv,
+                  VBAT_ADC_PIN, vbatPinMv, vbatMv, VBAT_DIVIDER_NUM, VBAT_DIVIDER_DEN,
+                  VSOL_ADC_PIN, vsolPinMv, vsolMv, VSOL_DIVIDER_NUM, VSOL_DIVIDER_DEN);
+  }
+}
+#endif
+
 void printMeasurements() {
   measurements.printCurrentAverage();
-#ifdef VBAT_ADC_PIN
-  const int pinMv = analogReadMilliVolts(VBAT_ADC_PIN);
-  const int packMv = pinMv * VBAT_DIVIDER_NUM / VBAT_DIVIDER_DEN;
+#ifdef USB_PRESENT_ADC_PIN
+  // Same 6 s cadence as printMeasurementsSchedule. Reuses the existing interval.
+  readM8Supply();
+#elif defined(VBAT_ADC_PIN)
+  const int pinMv = averagedAdcMv(VBAT_ADC_PIN);
+  const int packMv = dividerMv(pinMv, VBAT_DIVIDER_NUM, VBAT_DIVIDER_DEN);
   Serial.printf("VBAT ADC GPIO%d: pin %d mV, pack ~ %d mV (divider %d/%d)\n",
                 VBAT_ADC_PIN, pinMv, packMv, VBAT_DIVIDER_NUM, VBAT_DIVIDER_DEN);
 #endif

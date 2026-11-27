@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the two modular outdoor-monitor KiCad schematics (rev C).
+"""Generate the two modular outdoor-monitor KiCad schematics (rev D).
 
 One sheet per variant, A4 landscape (297 x 210 mm). Symbols are embedded, so
 the projects open without the KiCad system libraries. Run from anywhere:
@@ -212,12 +212,54 @@ R_BODY = """        (rectangle (start -1.016 -2.54) (end 1.016 2.54)
           (fill (type none))
         )"""
 
+# Horizontal PTC. Pin 1 is the left terminal, pin 2 the right.
+PTC_BODY = """        (rectangle (start -2.54 -1.27) (end 2.54 1.27)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline (pts (xy -2.54 1.27) (xy 2.54 -1.27))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )"""
+
+# Horizontal Schottky. Pin 1 is the anode (left), pin 2 the cathode (right).
+DIODE_H_BODY = """        (polyline (pts (xy -1.778 -1.27) (xy -1.778 1.27) (xy 1.27 0) (xy -1.778 -1.27))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline (pts (xy 1.778 -1.524) (xy 1.778 1.524))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )"""
+
+# Vertical TVS. Pin 1 is the cathode (top, the bar), pin 2 the anode (bottom).
+DIODE_V_BODY = """        (polyline (pts (xy -1.27 -1.27) (xy 1.27 -1.27) (xy 0 1.27) (xy -1.27 -1.27))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline (pts (xy -1.524 1.778) (xy 1.524 1.778))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )"""
+
+# Vertical capacitor. Pin 1 is the top terminal, pin 2 the bottom.
+CAP_BODY = """        (polyline (pts (xy -1.778 0.762) (xy 1.778 0.762))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline (pts (xy -1.778 -0.762) (xy 1.778 -0.762))
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )"""
+
 class Sch:
-    def __init__(self, project: str, title: str, comments: list[str]):
+    def __init__(self, project: str, title: str, comments: list[str], rev: str = "D", date: str = "2026-11-27"):
         self.project = project
         self.root = uid()
         self.title = title
         self.comments = comments
+        self.rev = rev
+        self.date = date
         self.defs: dict[str, SymbolDef] = {}
         self.extra_lib: list[str] = []
         self.items: list[str] = []
@@ -431,8 +473,8 @@ class Sch:
 
   (title_block
     (title "{esc(self.title)}")
-    (date "2026-11-26")
-    (rev "C")
+    (date "{self.date}")
+    (rev "{self.rev}")
     (company "DIY modular outdoor monitor")
 {comments}
   )
@@ -457,20 +499,31 @@ def build_libraries(variant: str) -> dict[str, SymbolDef]:
         libs[sym.lib_id] = sym
 
     add(two_pin("Device:R", False, R_BODY))
+    add(two_pin("Device:PTC", True, PTC_BODY))
+    add(two_pin("Device:D", True, DIODE_H_BODY))
+    add(two_pin("Device:TVS", False, DIODE_V_BODY))
+    add(two_pin("Device:C", False, CAP_BODY))
 
     if variant == "A":
-        # LOLIN32 V1.0.0 and the ESP32 D1 mini image share these pins.
-        # GPIO21/GPIO22 are Arduino SDA/SCL. The board is USB-powered:
-        # header 5V is VBUS, header 3V3 is the onboard LDO output.
+        # LOLIN32 V1.0.0 and the ESP32 D1 mini share these header pins.
+        # GPIO21/GPIO22 are Arduino SDA/SCL. GPIO34/35/32 are ADC1.
         mcu_right = [
             ("IO21", "bidirectional"),
             ("IO22", "bidirectional"),
+            ("IO34", "bidirectional"),
+            ("IO35", "bidirectional"),
+            ("IO32", "bidirectional"),
         ]
         mcu_id = "Modular:MCU_A"
     else:
+        # ESP32-S3 ADC1 is GPIO1-10. GPIO8/9 are I2C. GPIO6/7/10 stay free of
+        # the N16R8 octal PSRAM pins and of the strapping pins.
         mcu_right = [
             ("IO8", "bidirectional"),
             ("IO9", "bidirectional"),
+            ("IO6", "bidirectional"),
+            ("IO7", "bidirectional"),
+            ("IO10", "bidirectional"),
         ]
         mcu_id = "Modular:MCU_B"
     add(
@@ -544,6 +597,23 @@ def build_libraries(variant: str) -> dict[str, SymbolDef]:
             half_w=16.51,
         )
     )
+    # IEC 61076-2-101 M8 A-coded 4-pin. Pin numbers match the standard insert.
+    # 1 brown +5V, 2 white VBAT, 3 blue GND, 4 black VSOL.
+    add(
+        box_symbol(
+            "Modular:M8",
+            [
+                ("+5V", "passive"),
+                ("VBAT", "passive"),
+                ("GND", "passive"),
+                ("VSOL", "passive"),
+            ],
+            [],
+            half_w=12.7,
+        )
+    )
+    # Pin on the right so a part in the right margin stubs toward the sheet edge.
+    add(box_symbol("Modular:VBUS", [], [("VBUS", "passive")], half_w=8.89))
     return libs
 
 
@@ -558,40 +628,123 @@ def wire_pins(sch: Sch, pins: dict, mapping: list[tuple]) -> None:
         sch.stub(pins[name], direction, kind, net, center=center)
 
 
+def gu(n: int) -> float:
+    """Schematic connection grid is 1.27 mm. Every placed pin has to land on it."""
+    return round(n * 1.27, 2)
+
+
+def add_m8(sch: Sch, variant: str) -> None:
+    """M8 front end. Nets are local labels. Vertical parts on one column are 18
+    grid steps apart so a down-stub and the next up-stub do not touch."""
+    # Clear of the I2C pull-up labels (y = 58.42) and above the 5 V row.
+    j1 = sch.place("Modular:M8", "J1", "M8 A-code", gu(118), gu(64))
+    wire_pins(
+        sch,
+        j1,
+        [
+            ("+5V", "lbl", "M8_RAW", "left"),
+            ("VBAT", "lbl", "VBAT", "left"),
+            ("GND", "pwr", "GND", "left"),
+            ("VSOL", "lbl", "VSOL", "left"),
+        ],
+    )
+
+    # M8 pin 1 -> PTC -> TVS to GND -> Schottky into the dev-board 5V pin.
+    # D1 anode is the M8 side, so the 5V header cannot feed back out J1.
+    f1 = sch.place("Device:PTC", "F1", "MF-R110", gu(86), gu(84))
+    wire_pins(sch, f1, [("1", "lbl", "M8_RAW", "left"), ("2", "lbl", "M8_5V", "right")])
+    d1 = sch.place("Device:D", "D1", "1N5822", gu(108), gu(84))
+    wire_pins(sch, d1, [("1", "lbl", "M8_5V", "left"), ("2", "pwr", "+5V_SPS", "right")])
+    d2 = sch.place("Device:TVS", "D2", "P6KE6.8A", gu(124), gu(84))
+    wire_pins(sch, d2, [("1", "lbl", "M8_5V", "up"), ("2", "pwr", "GND", "down")])
+
+    # VBAT: TVS at the pin, then 1.00M series/top and 1.00M to GND. ADC = VBAT/2.
+    d3 = sch.place("Device:TVS", "D3", "P6KE6.8A", gu(100), gu(96))
+    wire_pins(sch, d3, [("1", "lbl", "VBAT", "up"), ("2", "pwr", "GND", "down")])
+    r10 = sch.place("Device:R", "R10", "1.00M", gu(116), gu(96))
+    wire_pins(sch, r10, [("1", "lbl", "VBAT", "up"), ("2", "lbl", "A_VBAT", "down")])
+    c10 = sch.place("Device:C", "C10", "100n", gu(100), gu(114))
+    wire_pins(sch, c10, [("1", "lbl", "A_VBAT", "up"), ("2", "pwr", "GND", "down")])
+    r11 = sch.place("Device:R", "R11", "1.00M", gu(116), gu(114))
+    wire_pins(sch, r11, [("1", "lbl", "A_VBAT", "up"), ("2", "pwr", "GND", "down")])
+
+    # VSOL: TVS at the pin, then 1.80M / 200k. ADC = VSOL/10.
+    d4 = sch.place("Device:TVS", "D4", "P6KE30A", gu(132), gu(96))
+    wire_pins(sch, d4, [("1", "lbl", "VSOL", "up"), ("2", "pwr", "GND", "down")])
+    r12 = sch.place("Device:R", "R12", "1.80M", gu(148), gu(96))
+    wire_pins(sch, r12, [("1", "lbl", "VSOL", "up"), ("2", "lbl", "A_VSOL", "down")])
+    c11 = sch.place("Device:C", "C11", "100n", gu(132), gu(114))
+    wire_pins(sch, c11, [("1", "lbl", "A_VSOL", "up"), ("2", "pwr", "GND", "down")])
+    r13 = sch.place("Device:R", "R13", "200k", gu(148), gu(114))
+    wire_pins(sch, r13, [("1", "lbl", "A_VSOL", "up"), ("2", "pwr", "GND", "down")])
+
+    # USB-present divider, in the right margin past the sensor pin stubs (x ~ 236).
+    # Rows are 20 grid steps apart so a GND stub cannot meet the USBDET stub.
+    # The tap is the USB jack VBUS, before the dev board's diode, not the 5V pin.
+    if variant == "A":
+        c12 = sch.place("Device:C", "C12", "100n", gu(192), gu(40))
+        wire_pins(sch, c12, [("1", "lbl", "USBDET", "up"), ("2", "pwr", "GND", "down")])
+        j2 = sch.place("Modular:VBUS", "J2", "VBUS tap", gu(210), gu(40))
+        wire_pins(sch, j2, [("VBUS", "lbl", "VBUS", "right")])
+        r15 = sch.place("Device:R", "R15", "150k", gu(192), gu(60))
+        wire_pins(sch, r15, [("1", "lbl", "USBDET", "up"), ("2", "pwr", "GND", "down")])
+        r14 = sch.place("Device:R", "R14", "100k", gu(210), gu(60))
+        wire_pins(sch, r14, [("1", "lbl", "VBUS", "up"), ("2", "lbl", "USBDET", "down")])
+    else:
+        r14 = sch.place("Device:R", "R14", "200k", gu(192), gu(34))
+        wire_pins(sch, r14, [("1", "lbl", "COMVBUS", "up"), ("2", "lbl", "USBDET", "down")])
+        j2 = sch.place("Modular:VBUS", "J2", "COM VBUS", gu(210), gu(34))
+        wire_pins(sch, j2, [("VBUS", "lbl", "COMVBUS", "right")])
+        r16 = sch.place("Device:R", "R16", "200k", gu(192), gu(54))
+        wire_pins(sch, r16, [("1", "lbl", "OTGVBUS", "up"), ("2", "lbl", "USBDET", "down")])
+        j3 = sch.place("Modular:VBUS", "J3", "USB VBUS", gu(210), gu(54))
+        wire_pins(sch, j3, [("VBUS", "lbl", "OTGVBUS", "right")])
+        c12 = sch.place("Device:C", "C12", "100n", gu(192), gu(74))
+        wire_pins(sch, c12, [("1", "lbl", "USBDET", "up"), ("2", "pwr", "GND", "down")])
+        r15 = sch.place("Device:R", "R15", "100k", gu(210), gu(74))
+        wire_pins(sch, r15, [("1", "lbl", "USBDET", "up"), ("2", "pwr", "GND", "down")])
+
+
 def build(variant: str) -> Sch:
     if variant == "A":
         project = "modular-a"
-        title = "Modular outdoor monitor A (USB power)"
+        title = "Modular outdoor monitor A (USB + M8)"
         comments = [
-            "Not the AirGradient V1.3 PCB. Off-the-shelf modules only.",
-            "USB on the dev board only. 5V pin feeds the SPS30. 3V3 pin feeds the I2C modules.",
-            "LOLIN32 and D1 mini: SDA GPIO21, SCL GPIO22. Power silkscreen 5V and 3V3.",
-            "No BQ25185, TPS63020, battery, solar input, NTC, or VBAT divider.",
-            "A4 landscape 297 x 210 mm. Rev C, 2026-11-26.",
+            "Not the AirGradient V1.3 PCB. Modules plus an M8 A-coded 4-pin panel plug.",
+            "USB jack, or M8 pins 1 and 3, feed the dev-board 5V pin. 3V3 pin feeds the I2C modules.",
+            "M8: 1 brown +5V, 2 white VBAT, 3 blue GND, 4 black VSOL. Sense only on pins 2 and 4.",
+            "D1 1N5822 ORs M8 5V onto the 5V pin. F1 PTC and D2 TVS protect that input.",
+            "A4 landscape 297 x 210 mm. Rev D, 2026-11-27.",
         ]
         mcu_id = "Modular:MCU_A"
-        mcu_value = "LOLIN32 / D1 mini, USB"
-        pin_line = "LOLIN32 silkscreen 5V and 3V3. ESP32 D1 mini silkscreen 5V (some print 5V0) and 3V3."
-        gpio_line = "SDA GPIO21, SCL GPIO22. Leave the LOLIN32 PH-2 battery socket empty."
+        mcu_value = "LOLIN32 / D1 mini"
+        pin_line = "LOLIN32 and D1 mini: 5V pin after D1, 3V3 pin is the onboard LDO. Do not back-feed 3V3."
+        gpio_line = "SDA GPIO21, SCL GPIO22. VBAT GPIO34, VSOL GPIO35, USB detect GPIO32. PH-2 socket stays empty."
         avoid_line = (
-            "Leave open: GPIO0/2/12/15 (strap), GPIO5 (LED, active low), GPIO1/TX, GPIO3/RX, GPIO4, GPIO26, GPIO36/VP, GPIO6-11 (flash)."
+            "Leave open: GPIO0/2/12/15 (strap), GPIO5 (LED), GPIO1/3/4, GPIO16/17 (Serial2), GPIO6-11 (flash)."
+        )
+        usb_line = (
+            "J2 is the micro-USB VBUS pad, before the LOLIN32 CJ2301 or the D1 mini Schottky. Not the 5V header."
         )
     else:
         project = "modular-b"
-        title = "Modular outdoor monitor B (USB power)"
+        title = "Modular outdoor monitor B (USB + M8)"
         comments = [
-            "Not the AirGradient V1.3 PCB. Off-the-shelf modules only.",
-            "USB on the dev board only. 5V pin feeds the SPS30. 3V3 pin feeds the I2C modules.",
-            "SDA GPIO8, SCL GPIO9. Power silkscreen 5V and 3V3.",
-            "No BQ25185, TPS63020, battery, solar input, NTC, or VBAT divider.",
-            "A4 landscape 297 x 210 mm. Rev C, 2026-11-26.",
+            "Not the AirGradient V1.3 PCB. Modules plus an M8 A-coded 4-pin panel plug.",
+            "USB jack, or M8 pins 1 and 3, feed the dev-board 5V pin. 3V3 pin feeds the I2C modules.",
+            "M8: 1 brown +5V, 2 white VBAT, 3 blue GND, 4 black VSOL. Sense only on pins 2 and 4.",
+            "D1 1N5822 ORs M8 5V onto the 5V pin. F1 PTC and D2 TVS protect that input.",
+            "A4 landscape 297 x 210 mm. Rev D, 2026-11-27.",
         ]
         mcu_id = "Modular:MCU_B"
-        mcu_value = "ESP32-S3 N16R8, USB"
-        pin_line = "DevKitC-1 / AI-S3 silkscreen: 5V (VBUS) and 3V3 (onboard LDO)."
-        gpio_line = "SDA GPIO8, SCL GPIO9. N16R8: 16 MB quad flash, 8 MB octal PSRAM."
+        mcu_value = "ESP32-S3 N16R8"
+        pin_line = "DevKitC-1 / AI-S3: 5V pin is after the onboard Schottky. 3V3 pin is the onboard LDO."
+        gpio_line = "SDA GPIO8, SCL GPIO9. VBAT GPIO6, VSOL GPIO7, USB detect GPIO10. N16R8 quad flash, octal PSRAM."
         avoid_line = (
-            "Leave open: GPIO0/3/45/46 (strap), GPIO6, GPIO7, GPIO19/20 (USB), GPIO43/44 (UART), GPIO33-37 (octal PSRAM), GPIO48 (RGB)."
+            "Leave open: GPIO0/3/45/46 (strap), GPIO19/20 (USB), GPIO43/44 (UART), GPIO33-37 (octal PSRAM), GPIO48 (RGB)."
+        )
+        usb_line = (
+            "J2 and J3 are the two USB-jack VBUS pads, before the DevKitC-1 1N5819s. Not the 5V header."
         )
 
     sch = Sch(project, title, comments)
@@ -613,9 +766,21 @@ def build(variant: str) -> Sch:
 
     mcu = sch.place(mcu_id, "U1", mcu_value, 62.23, 86.36)
     if variant == "A":
-        sig = [("IO21", "SDA"), ("IO22", "SCL")]
+        sig = [
+            ("IO21", "SDA"),
+            ("IO22", "SCL"),
+            ("IO34", "A_VBAT"),
+            ("IO35", "A_VSOL"),
+            ("IO32", "USBDET"),
+        ]
     else:
-        sig = [("IO8", "SDA"), ("IO9", "SCL")]
+        sig = [
+            ("IO8", "SDA"),
+            ("IO9", "SCL"),
+            ("IO6", "A_VBAT"),
+            ("IO7", "A_VSOL"),
+            ("IO10", "USBDET"),
+        ]
     wire_pins(
         sch,
         mcu,
@@ -709,14 +874,19 @@ def build(variant: str) -> Sch:
         ],
     )
 
+    add_m8(sch, variant)
+
     # One text object per line. KiCad does not treat \n inside a text string as a break.
     note_lines = [
-        "Power: the dev board's own USB connector. Do not inject another supply into the 3V3 pin.",
-        "5V pin = VBUS = +5V_SPS = SPS30 VDD, always on. 3V3 pin = onboard LDO = +3V3 for U2 U3 U4 U5 and R1 R2.",
+        "Power: dev-board USB, or J1 M8 pins 1 and 3 when USB is unplugged. Never feed the 3V3 pin.",
+        "M8 pin 1: F1 MF-R110, D2 P6KE6.8A, D1 1N5822 (anode at M8) into the dev-board 5V pin = +5V_SPS = SPS30 VDD.",
+        "M8 pin 2 VBAT 2.7-4.6 V: D3 P6KE6.8A, R10/R11 1.00M/1.00M, C10 100n. ADC = VBAT/2 (4.6 V -> 2.30 V, 6.2 V -> 3.10 V).",
+        "M8 pin 4 VSOL up to 22 V: D4 P6KE30A, R12/R13 1.80M/200k, C11 100n. ADC = VSOL/10 (22 V -> 2.20 V, 25 V -> 2.50 V, 31 V -> 3.10 V).",
+        usb_line,
+        "Firmware reads A_VBAT and A_VSOL, and reports both as 0 while USBDET is above 1.2 V.",
         pin_line,
         gpio_line,
-        "I2C is 100 kHz at 3.3 V. R1 and R2 are 4.7k to +3V3. Never pull SDA or SCL up to 5 V.",
-        "Fit U4 SCD30 (0x61, SEL to GND) or U5 SCD41 (0x62), not both. U6 SEL to GND selects I2C 0x69 before power-up.",
+        "I2C is 100 kHz at 3.3 V. R1 and R2 are 4.7k to +3V3. Fit U4 or U5, not both. U6 SEL to GND before power-up.",
         avoid_line,
     ]
     note_y = 6.35
