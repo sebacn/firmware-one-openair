@@ -360,4 +360,4 @@ The S3 image was linked against the `qio_opi` SDK libraries and `esptool` was in
 
 ## Enclosure
 
-The enclosure that matches this revision is the original Open Air cover and base with a new carrier, in [`enclosure/`](enclosure/README.md). The older battery shells in that folder are not this design.
+The enclosure for this revision is the original Open Air cover and base with a printed carrier, in [`enclosure/`](enclosure/README.md). Viewer: [`enclosure/assembly/index.html`](enclosure/assembly/index.html).

@@ -1,11 +1,11 @@
 # AirGradient DIY outdoor enclosure
 
-These three STLs are the files in [diy_outdoor_3d.zip](https://www.airgradient.com/documents/3d/diy_outdoor_3d.zip), linked from the [AirGradient builds overview](https://www.airgradient.com/documentation/kb/kb-diy-the-airgradient-builds-overview). AirGradient publishes that page under **CC BY-SA 4.0**. The same bytes are already in `hardware/open-air/enclosure/`. They are copied here so this design has its own reference next to the variants.
+These three STLs are the files in [diy_outdoor_3d.zip](https://www.airgradient.com/documents/3d/diy_outdoor_3d.zip), linked from the [AirGradient builds overview](https://www.airgradient.com/documentation/kb/kb-diy-the-airgradient-builds-overview). AirGradient publishes that page under **CC BY-SA 4.0**. The same bytes are already in `hardware/open-air/enclosure/`.
 
 | File | Outer size (mm) | Role |
 | --- | --- | --- |
-| Top Part C | 91.5 × 85.0 × 81.9 | Cover. Slides over the base. Side wall carries the USB side. |
-| Bottom Part B | 83.0 × 82.9 × 26.7 | Open ring. The middle is clear so air reaches the particle sensor. |
-| Bottom Part A | 71.5 × 71.2 × 11.5 | Round grill that sits in that opening. Inlet faces down. |
+| Top Part C | 91.5 × 85.0 × 81.9 | Cover. Used as published. Slides over the base. |
+| Bottom Part B | 83.0 × 82.9 × 26.7 | Base ring. Used as published. The lip holds the carrier. |
+| Bottom Part A | 71.5 × 71.2 × 11.5 | Original grill. The printed carrier in `../carrier/` takes this seat. |
 
-Stacked, they match the published Open Air size of 91.5 × 86.7 × 85 mm. The full kit in those shells — PCB, ESP32-C3, USB-C, SGP41, SenseAir S8 and PMS5003T — is `../assembly/original.glb`. Which of those positions come from the KiCad files, and which are estimated, is in the enclosure README.
+The modular assembly that uses the cover and the base is [`../assembly/modular.glb`](../assembly/modular.glb).

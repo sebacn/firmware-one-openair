@@ -16,21 +16,7 @@
 </head>
 <body>
   <header>
-    <label>Variant
-      <select id="variant">
-        <optgroup label="Current">
-          <option value="modular" selected>USB-only carrier in the original shells</option>
-        </optgroup>
-        <optgroup label="Previous">
-          <option value="original">Original Open Air kit</option>
-          <option value="outdoor-flat">A — battery flat on top</option>
-          <option value="outdoor-vertical">B — battery on the side</option>
-          <option value="variant-1">1 — rear battery</option>
-          <option value="variant-2">2 — battery plinth</option>
-          <option value="variant-3">3 — sensor pod</option>
-        </optgroup>
-      </select>
-    </label>
+    <strong>USB-only carrier</strong>
     <label><input id="hide" type="checkbox" /> Hide shell</label>
     <label>Shell opacity <input id="opacity" type="range" min="0" max="100" value="35" /></label>
     <div id="legend"></div>
@@ -112,19 +98,7 @@
         applyShell();
       });
     }
-    const DIMS = {
-      "modular": "Current: original cover and base, new carrier. No battery. SHT45, SGP41 and SCD30 face the bottom vents. SPS30 stands, inlet down. Dev board stands, USB down. M8 4-pin faces down.",
-      "outdoor-flat": "Retired. Battery flat on top. 91.5 × 86.7 × 124 mm.",
-      "outdoor-vertical": "B vertical: 91.5 × 86.7 × 106 mm. Grill 3.2, base 28, cover 94. Side bay 30 mm for a 22 mm pack plus a 4 mm PCM. Same USB, M8 and PM holes.",
-      "original": "Original O-1PST: grill down, cover up. PCB stands in the middle, USB-C on the bottom edge. PMS5003T stands behind it, inlet down, cable off the top. SenseAir S8 is screwed flat to the floor. No separate SHT.",
-      "variant-1": "Previous variant 1. Not the three-part outdoor shell.",
-      "variant-2": "Previous variant 2. Not the three-part outdoor shell.",
-      "variant-3": "Previous variant 3. Not the three-part outdoor shell."
-    };
-    document.getElementById("variant").onchange = (e) => {
-      document.getElementById("dims").textContent = DIMS[e.target.value] || "";
-      load(e.target.value);
-    };
+    document.getElementById("dims").textContent = "Original cover and base. Carrier: SHT45, SGP41 and SCD30 face down; SPS30 and the dev board stand with the inlet and USB at the bottom; M8 4-pin faces down.";
     addEventListener("resize", () => {
       camera.aspect = view.clientWidth / view.clientHeight;
       camera.updateProjectionMatrix();

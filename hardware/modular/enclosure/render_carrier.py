@@ -13,10 +13,54 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import trimesh
-
-from render_variants import add_mesh, box_mesh, paint, scene_bounds
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 ROOT = Path(__file__).resolve().parent
+
+
+def box_mesh(center, size):
+    c = np.asarray(center, float)
+    s = np.asarray(size, float) / 2
+    corners = np.array([[x, y, z] for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)], float)
+    verts = c + corners * s
+    faces = [
+        [0, 1, 3, 2],
+        [4, 6, 7, 5],
+        [0, 4, 5, 1],
+        [2, 3, 7, 6],
+        [0, 2, 6, 4],
+        [1, 5, 7, 3],
+    ]
+    tri = np.array(faces)
+    return trimesh.Trimesh(
+        vertices=verts,
+        faces=tri[:, [0, 1, 2]].tolist() + tri[:, [0, 2, 3]].tolist(),
+    )
+
+
+def add_mesh(ax, mesh, color, alpha=1.0):
+    if mesh.is_empty:
+        return
+    tri = mesh.triangles
+    if len(tri) > 6000:
+        idx = np.linspace(0, len(tri) - 1, 6000).astype(int)
+        tri = tri[idx]
+    pc = Poly3DCollection(tri, alpha=alpha, linewidths=0)
+    pc.set_facecolor(color)
+    pc.set_edgecolor((0, 0, 0, 0.05))
+    ax.add_collection3d(pc)
+
+
+def scene_bounds(meshes):
+    lo = np.min([m.bounds[0] for m in meshes], axis=0)
+    hi = np.max([m.bounds[1] for m in meshes], axis=0)
+    return lo, hi
+
+
+def paint(mesh, hexcolor, alpha=255):
+    rgb = matplotlib.colors.to_rgb(hexcolor)
+    mesh.visual.face_colors = [int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255), alpha]
+    return mesh
 REF = ROOT / "reference-outdoor"
 RENDERS = ROOT / "renders"
 
