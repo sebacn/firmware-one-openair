@@ -357,3 +357,7 @@ A build on 2026-11-27, rev D. Variant A is the LOLIN32 image (`lolin32`). `modul
 Those numbers are with `AG_MODULAR_I2C` (SCD30/SCD41 auto-detect and SPS30 over I2C), `VBAT_ADC_PIN`, `VSOL_ADC_PIN` and `USB_PRESENT_ADC_PIN`. The two variant A rows use the same flags on board `lolin32`. Their flash totals differ because the environment name is compiled into file paths. The `esp32-c3` environment was not changed and was not rebuilt.
 
 The S3 image was linked against the `qio_opi` SDK libraries and `esptool` was invoked with `--flash_size 16MB`. The app partition is still the 4 MB Open Air slot (`0x1E0000` bytes), which is why the flash percentage is against 1.9 MB rather than 16 MB.
+
+## Enclosure
+
+The enclosure for this revision is the original Open Air cover and base, with the original grill reworked on the inside only, in [`enclosure/`](enclosure/README.md). Viewer: [`enclosure/assembly/index.html`](enclosure/assembly/index.html).

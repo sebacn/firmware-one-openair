@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Modular grill in the original Open Air shells</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #eef1f4; color: #14202b; font: 15px/1.4 system-ui, sans-serif; }
+    header { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; padding: 12px 16px; background: #fff; border-bottom: 1px solid #d5dbe2; }
+    #view { position: absolute; inset: 78px 0 0 0; }
+    label { display: inline-flex; gap: 6px; align-items: center; }
+    #legend { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+    #dims { flex-basis: 100%; color: #243447; }
+    .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; border: 1px solid rgba(0,0,0,0.15); }
+    button, select { font: inherit; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Original shells, reworked grill</strong>
+    <label><input id="hide" type="checkbox" /> Hide cover and base</label>
+    <label>Cover / base opacity <input id="opacity" type="range" min="0" max="100" value="32" /></label>
+    <div id="legend"></div>
+    <div id="dims">Part B and Part C are the original STLs. The grill is the original Part A; only its interior changed. SHT45, SGP41 and SCD30 face down. SPS30 stands with the inlet down. The dev board stands with USB down. The M8 plug faces down.</div>
+  </header>
+  <div id="view"></div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+    const view = document.getElementById("view");
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.setSize(view.clientWidth, view.clientHeight);
+    renderer.setClearColor(0xeef1f4);
+    view.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, view.clientWidth / view.clientHeight, 0.1, 2000);
+    camera.position.set(160, -180, 120);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 40);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const key = new THREE.DirectionalLight(0xffffff, 1.25);
+    key.position.set(80, -40, 180);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0xdde7f0, 0.45);
+    fill.position.set(-120, 80, 40);
+    scene.add(fill);
+    const legendEl = document.getElementById("legend");
+    const hide = document.getElementById("hide");
+    const opacity = document.getElementById("opacity");
+    let shellMats = [];
+
+    function applyShell() {
+      const a = hide.checked ? 0 : Number(opacity.value) / 100;
+      for (const m of shellMats) {
+        m.transparent = true;
+        m.opacity = a;
+        m.depthWrite = a > 0.85;
+      }
+    }
+    hide.onchange = applyShell;
+    opacity.oninput = applyShell;
+
+    function load(n) {
+      for (const child of [...scene.children]) {
+        if (child.isLight) continue;
+        scene.remove(child);
+      }
+      shellMats = [];
+      legendEl.textContent = "";
+      new GLTFLoader().load(n + ".glb", (gltf) => {
+        scene.add(gltf.scene);
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        controls.target.copy(center);
+        camera.position.set(center.x + size.x * 0.9, center.y - size.y * 1.35, center.z + size.z * 0.55);
+        controls.update();
+        const seen = new Set();
+        gltf.scene.traverse((obj) => {
+          if (!obj.isMesh) return;
+          const mats = [].concat(obj.material);
+          const name = obj.name || "part";
+          if (name === "Cover" || name === "Base") shellMats.push(...mats);
+          if (seen.has(name)) return;
+          seen.add(name);
+          const color = mats[0] && mats[0].color ? "#" + mats[0].color.getHexString() : "#ccc";
+          const item = document.createElement("span");
+          item.innerHTML = `<i class="swatch" style="background:${color}"></i> ${name}`;
+          legendEl.appendChild(item);
+        });
+        applyShell();
+      });
+    }
+    addEventListener("resize", () => {
+      camera.aspect = view.clientWidth / view.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(view.clientWidth, view.clientHeight);
+    });
+    (function tick() { requestAnimationFrame(tick); controls.update(); renderer.render(scene, camera); })();
+    load("modular");
+  </script>
+</body>
+</html>
